@@ -3,14 +3,6 @@
 // @see https://github.com/MetaMask/provider-engine
 // @see https://github.com/ethereum/wiki/wiki/JavaScript-API
 
-// This is required by the ledger libraries
-if (!window.u2f) {
-    window.u2f = require('./vendor/u2f-api');
-}
-if (!window.Buffer) {
-    window.Buffer = require('buffer').Buffer;
-}
-
 const Ledger3 = require('./vendor/ledger3.js');
 const LedgerEth = require('./vendor/ledger-eth.js');
 const Tx = require('ethereumjs-tx');
