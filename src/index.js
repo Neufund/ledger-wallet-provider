@@ -12,8 +12,8 @@ class LedgerWalletSubprovider {
         this.path = "44'/60'/0'/0";
         this.accounts = undefined;
         this.scrambleKey = "w0w"; // Hardcoded key for the Ledger Nano S
-        this.ledger3 = new Ledger3(self.scrambleKey);
-        this.ledger = new LedgerEth(self.ledger3);
+        this.ledger3 = new Ledger3(this.scrambleKey);
+        this.ledger = new LedgerEth(this.ledger3);
         this.getAppConfig();
     }
 
@@ -25,15 +25,16 @@ class LedgerWalletSubprovider {
     }
 
     getAccounts(cb) {
-        if (self.accounts !== undefined) {
+        var self = this;
+        if (this.accounts !== undefined) {
             console.log('Using cached result');
-            cb(undefined, self.accounts);
+            cb(undefined, this.accounts);
             return;
         }
 
         const display = false;  // Ask for on-device confirmation
         const chainCode = false; // Include the chain code
-        self.ledger.getAddress(self.path, (result, error)=> {
+        this.ledger.getAddress(this.path, (result, error)=> {
             if (typeof result === undefined) {
                 cb(error, result);
             }
@@ -49,6 +50,7 @@ class LedgerWalletSubprovider {
     }
 
     signTransaction(txData, callback) {
+        var self = this;
         console.log('signTransaction', txData);
 
         // Encode using ethereumjs-tx
