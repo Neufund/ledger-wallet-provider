@@ -7,6 +7,9 @@
 if (!window.u2f) {
     window.u2f = require('./vendor/u2f-api');
 }
+if (!window.Buffer) {
+    window.Buffer = require('buffer/').Buffer;
+}
 
 const Ledger3 = require('./vendor/ledger3.js');
 const LedgerEth = require('./vendor/ledger-eth.js');
