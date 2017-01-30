@@ -15,6 +15,8 @@ class LedgerWalletSubprovider {
         this.ledger3 = new Ledger3(this.scrambleKey);
         this.ledger = new LedgerEth(this.ledger3);
         this.getAppConfig();
+        this.getAccounts = this.getAccounts.bind(this);
+        this.signTransaction = this.signTransaction.bind(this);
     }
 
     getAppConfig() {
