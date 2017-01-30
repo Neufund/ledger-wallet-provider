@@ -1,0 +1,36 @@
+{
+  "name": "ledger-wallet-provider",
+  "version": "1.0.0",
+  "description": "Ledger Nano S wallet provider for the Web3 ProviderEngine",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "bundle": "gulp bundle"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Neufund/ledger-wallet-provider.git"
+  },
+  "author": "Neufund",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Neufund/ledger-wallet-provider/issues"
+  },
+  "homepage": "https://github.com/Neufund/ledger-wallet-provider#readme",
+  "devDependencies": {
+    "babel-preset-es2015": "^6.22.0",
+    "babelify": "^7.3.0",
+    "browserify": "^14.0.0",
+    "del": "^2.2.2",
+    "gulp": "^3.9.1",
+    "gulp-plumber": "^1.1.0",
+    "gulp-sourcemaps": "^2.4.0",
+    "gulp-uglify": "^2.0.1",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0"
+  },
+  "dependencies": {
+    "ethereumjs-tx": "^1.2.2",
+    "web3-provider-engine": "^8.6.1"
+  }
+}
