@@ -5,7 +5,7 @@ Ledger Nano S wallet provider for the Web3 ProviderEngine
 # Building
 
 ```
-npm install; npm run bundle; npm test
+npm install; npm run build
 ```
 
 # Using
