@@ -8,14 +8,12 @@ if (!window.u2f) {
     window.u2f = require('./vendor/u2f-api');
 }
 
-const HookedWalletSubprovider = require('web3-provider-engine/subproviders/hooked-wallet.js');
 const Ledger3 = require('./vendor/ledger3.js');
 const LedgerEth = require('./vendor/ledger-eth.js');
 const Tx = require('ethereumjs-tx');
 
-class LedgerWalletSubprovider extends HookedWalletSubprovider {
+class LedgerWalletSubprovider {
     constructor() {
-        super();
         this.path = "44'/60'/0'/0";
         this.accounts = undefined;
         this.scrambleKey = "w0w"; // Hardcoded key for the Ledger Nano S
