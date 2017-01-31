@@ -14,7 +14,6 @@ class LedgerWalletSubprovider {
         this.scrambleKey = "w0w"; // Hardcoded key for the Ledger Nano S
         this.ledger3 = new Ledger3(this.scrambleKey);
         this.ledger = new LedgerEth(this.ledger3);
-        this.getAppConfig();
         this.getAccounts = this.getAccounts.bind(this);
         this.signTransaction = this.signTransaction.bind(this);
     }
@@ -22,7 +21,6 @@ class LedgerWalletSubprovider {
     getAppConfig(cb) {
         this.ledger.getAppConfiguration((config)=> {
             // TODO: Need at least version 1.0.4 for EIP155 signing
-            console.log('Found ledger version:', config.version);
             cb(config);
         });
     }
