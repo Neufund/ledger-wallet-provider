@@ -14,7 +14,8 @@
  * Namespace for the U2F api.
  * @type {Object}
  */
-window.u2f = u2f || {};
+var u2f = u2f || {};
+window.u2f = u2f;
 
 /**
  * FIDO U2F Javascript API Version
