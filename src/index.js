@@ -19,10 +19,11 @@ class LedgerWalletSubprovider {
         this.signTransaction = this.signTransaction.bind(this);
     }
 
-    getAppConfig() {
+    getAppConfig(cb) {
         this.ledger.getAppConfiguration((config)=> {
             // TODO: Need at least version 1.0.4 for EIP155 signing
             console.log('Found ledger version:', config.version);
+            cb(config);
         });
     }
 
