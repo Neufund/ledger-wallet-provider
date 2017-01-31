@@ -40,7 +40,7 @@ class LedgerWalletSubprovider {
             if (typeof result === undefined) {
                 cb(error, result);
             }
-            self.accounts = [result.address];
+            self.accounts = [result.address.toLowerCase()];
             cb(error, self.accounts);
         }, display, chainCode);
     }
