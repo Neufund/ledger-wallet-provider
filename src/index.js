@@ -49,14 +49,13 @@ class LedgerWalletSubprovider {
         });
     }
 
-    getAccounts(cb) {
+    getAccounts(cb, askForOnDeviceConfirmation = true) {
         var self = this;
         if (this.accounts !== undefined) {
             cb(undefined, this.accounts);
             return;
         }
 
-        const display = false;  // Ask for on-device confirmation
         const chainCode = false; // Include the chain code
         this.ledger.getAddress(this.path, (result, error)=> {
             if (typeof result === undefined) {
@@ -64,7 +63,7 @@ class LedgerWalletSubprovider {
             }
             self.accounts = [result.address.toLowerCase()];
             cb(error, self.accounts);
-        }, display, chainCode);
+        }, askForOnDeviceConfirmation, chainCode);
     }
 
     signTransaction(txData, callback) {
