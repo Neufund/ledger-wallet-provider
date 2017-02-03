@@ -90,8 +90,6 @@ class LedgerWalletSubprovider {
             tx.raw[7] = Buffer.from([]);         // r
             tx.raw[8] = Buffer.from([]);         // s
 
-            // TODO: It doesn't seem to increment the nonce value correctly
-
             // Encode as hex-rlp for Ledger
             const hex = tx.serialize().toString('hex');
 
