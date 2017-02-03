@@ -67,11 +67,6 @@ class LedgerWalletSubprovider {
         }, display, chainCode);
     }
 
-    static approveTransaction(tx, cb) {
-        // Approved!
-        cb(undefined, true);
-    }
-
     signTransaction(txData, callback) {
         var self = this;
 
@@ -113,10 +108,6 @@ class LedgerWalletSubprovider {
                 callback(undefined, rawTx);
             })
         })
-    }
-
-    static signMessage(msgParams, callback) {
-        callback('Error - Signing messages is currently not supported by the Ledger Ethereum App.')
     }
 }
 
