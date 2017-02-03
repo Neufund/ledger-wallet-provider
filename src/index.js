@@ -1,12 +1,36 @@
-// Ledger wallet
-//
-// @see https://github.com/MetaMask/provider-engine
-// @see https://github.com/ethereum/wiki/wiki/JavaScript-API
-
 const Ledger3 = require('./vendor/ledger3.js');
 const LedgerEth = require('./vendor/ledger-eth.js');
 const Tx = require('ethereumjs-tx');
 
+/**
+ *  Ledger wallet
+ *
+ *  @see https://github.com/MetaMask/provider-engine
+ *  @see https://github.com/ethereum/wiki/wiki/JavaScript-API
+ *
+ *  Paths:
+ *  Minimum Nano Ledger S accepts are:
+ *
+ *   * 44'/60'
+ *   * 44'/61'
+ *
+ *  MyEtherWallet.com by default uses the range
+ *
+ *   * 44'/60'/0'/n
+ *
+ *  Note: no hardend derivation on the `n`
+ *
+ *  BIP44/EIP84 specificies:
+ *
+ *  * m / purpose' / coin_type' / account' / change / address_index
+ *
+ *  https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
+ *  https://github.com/satoshilabs/slips/blob/master/slip-0044.md
+ *
+ *  Implementations:
+ *  https://github.com/MetaMask/metamask-plugin/blob/master/app/scripts/keyrings/hd.js
+ *
+ */
 class LedgerWalletSubprovider {
     constructor() {
         this.path = "44'/60'/0'/0";
@@ -103,34 +127,3 @@ class LedgerWalletSubprovider {
 }
 
 module.exports = LedgerWalletSubprovider;
-
-/*
- 0 = ok: Success. Not used in errors but reserved
- 1 = other error: An error otherwise not enumerated here
- 2 = bad request: The request cannot be processed
- 3 = configuration Client configuration is not supported
- 4 = device ineligible: The presented device is not eligible for this request. For a registration request this may mean that the token is already registered, and for a sign request it may mean the token does not know the presented key handle.
- 5 = timeout: Timeout reached before request could be satisfied
- */
-
-// Paths:
-// Minimum Nano Ledger S accepts are:
-//
-//  * 44'/60'
-//  * 44'/61'
-//
-// MyEtherWallet.com by default uses the range
-//
-//  * 44'/60'/0'/n
-//
-// Note: no hardend derivation on the `n`
-//
-// BIP44/EIP84 specificies:
-//
-// * m / purpose' / coin_type' / account' / change / address_index 
-//
-// https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
-// https://github.com/satoshilabs/slips/blob/master/slip-0044.md
-//
-// Implementations:
-// https://github.com/MetaMask/metamask-plugin/blob/master/app/scripts/keyrings/hd.js
