@@ -52,7 +52,6 @@ class LedgerWalletSubprovider {
     getAccounts(cb) {
         var self = this;
         if (this.accounts !== undefined) {
-            console.log('Using cached result');
             cb(undefined, this.accounts);
             return;
         }
@@ -69,14 +68,12 @@ class LedgerWalletSubprovider {
     }
 
     static approveTransaction(tx, cb) {
-        console.log('approveTransaction', tx);
         // Approved!
         cb(undefined, true);
     }
 
     signTransaction(txData, callback) {
         var self = this;
-        console.log('signTransaction', txData);
 
         // Encode using ethereumjs-tx
         var tx = new Tx(txData);
@@ -121,7 +118,6 @@ class LedgerWalletSubprovider {
     }
 
     static signMessage(msgParams, callback) {
-        console.log('signMessage', msgParams);
         callback('Error - Signing messages is currently not supported by the Ledger Ethereum App.')
     }
 }
