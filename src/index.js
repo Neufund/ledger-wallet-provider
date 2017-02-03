@@ -3,10 +3,8 @@ const LedgerEth = require('./vendor/ledger-eth.js');
 const Tx = require('ethereumjs-tx');
 
 /**
- *  Ledger wallet
+ *  @class LedgerWalletSubprovider
  *
- *  @see https://github.com/MetaMask/provider-engine
- *  @see https://github.com/ethereum/wiki/wiki/JavaScript-API
  *
  *  Paths:
  *  Minimum Nano Ledger S accepts are:
@@ -24,8 +22,10 @@ const Tx = require('ethereumjs-tx');
  *
  *  * m / purpose' / coin_type' / account' / change / address_index
  *
- *  https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
- *  https://github.com/satoshilabs/slips/blob/master/slip-0044.md
+ *  @see https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
+ *  @see https://github.com/satoshilabs/slips/blob/master/slip-0044.md
+ *  @see https://github.com/MetaMask/provider-engine
+ *  @see https://github.com/ethereum/wiki/wiki/JavaScript-API
  *
  *  Implementations:
  *  https://github.com/MetaMask/metamask-plugin/blob/master/app/scripts/keyrings/hd.js
@@ -49,23 +49,35 @@ class LedgerWalletSubprovider {
         });
     }
 
-    getAccounts(cb, askForOnDeviceConfirmation = true) {
+    /**
+     * Gets a list of accounts from a device
+     * @param callback
+     * @param askForOnDeviceConfirmation
+     */
+    getAccounts(callback, askForOnDeviceConfirmation = true) {
         var self = this;
         if (this.accounts !== undefined) {
-            cb(undefined, this.accounts);
+            callback(undefined, this.accounts);
             return;
         }
 
         const chainCode = false; // Include the chain code
         this.ledger.getAddress(this.path, (result, error)=> {
             if (typeof result === undefined) {
-                cb(error, result);
+                callback(error, result);
             }
+            // Ledger returns checksumed addresses (https://github.com/ethereum/EIPs/issues/55)
+            // and Provider engine doesn't handle them correctly, that's why we coerce them to usual addresses
             self.accounts = [result.address.toLowerCase()];
-            cb(error, self.accounts);
+            callback(error, self.accounts);
         }, askForOnDeviceConfirmation, chainCode);
     }
 
+    /**
+     * Signs txData in a format that ethereumjs-tx accepts
+     * @param {object} txData - transaction to sign
+     * @param {function} callback - callback
+     */
     signTransaction(txData, callback) {
         var self = this;
 
