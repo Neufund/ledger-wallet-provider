@@ -1,6 +1,7 @@
 const Ledger3 = require('./vendor/ledger3.js');
 const LedgerEth = require('./vendor/ledger-eth.js');
 const Tx = require('ethereumjs-tx');
+const u2fApi = require('u2f-api');
 
 /**
  *  @class LedgerWalletSubprovider
@@ -42,6 +43,28 @@ class LedgerWalletSubprovider {
         this.signTransaction = this.signTransaction.bind(this);
     }
 
+    /**
+     * Checks if the browser supports u2f.
+     * Currently there is no god way to do feature-detection,
+     * so we do user-agent detection
+     * and have a special case for firefox FIDO extension
+     * @param cb
+     */
+    isSupported(cb) {
+        if (window.u2f.getApiVersion) {
+            // u2f object was not found. Using Google polyfill
+            // Use user-agent based check
+            u2fApi.isSupported().then((supported)=>cb(supported));
+        } else {
+            // u2f object is found (Firefox with extension)
+            cb(true);
+        }
+    }
+
+    /**
+     * Gets the version of installed ethereum app
+     * @param cb
+     */
     getAppConfig(cb) {
         this.ledger.getAppConfiguration((config)=> {
             // TODO: Need at least version 1.0.4 for EIP155 signing
