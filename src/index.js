@@ -63,6 +63,8 @@ class LedgerWalletSubprovider {
 
     /**
      * Gets the version of installed ethereum app
+     * Check the isSupported() before calling that function
+     * otherwise it never returns
      * @param cb
      */
     getAppConfig(cb) {
@@ -73,8 +75,14 @@ class LedgerWalletSubprovider {
     }
 
     /**
+     @typedef {function} failableCallback
+     @param error
+     @param result
+     */
+
+    /**
      * Gets a list of accounts from a device
-     * @param callback
+     * @param {failableCallback} callback
      * @param askForOnDeviceConfirmation
      */
     getAccounts(callback, askForOnDeviceConfirmation = true) {
@@ -99,7 +107,7 @@ class LedgerWalletSubprovider {
     /**
      * Signs txData in a format that ethereumjs-tx accepts
      * @param {object} txData - transaction to sign
-     * @param {function} callback - callback
+     * @param {failableCallback} callback - callback
      */
     signTransaction(txData, callback) {
         var self = this;
