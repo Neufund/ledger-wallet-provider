@@ -67,7 +67,7 @@ class LedgerWallet {
                 // u2f object was not found. Using Google polyfill
                 const intervalId = setTimeout(()=> {
                     resolve(false);
-                }, 100);
+                }, 3000);
                 U2F.getApiVersion((version)=> {
                     clearTimeout(intervalId);
                     resolve(true);
