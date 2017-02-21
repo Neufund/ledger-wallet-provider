@@ -48,10 +48,10 @@ class LedgerWallet {
         });
     }
 
-    static NOT_SUPPORTED_ERROR = new Error(
+    static NOT_SUPPORTED_ERROR_MSG =
         "LedgerWallet uses U2F which is not supported by your browser. " +
         "Use Chrome, Opera or Firefox with a U2F extension." +
-        "Also make sure you're on an HTTPS connection");
+        "Also make sure you're on an HTTPS connection";
 
     /**
      * Checks if the browser supports u2f.
@@ -90,7 +90,7 @@ class LedgerWallet {
      */
     getAppConfig(callback) {
         if (!this._isU2FSupported) {
-            callback(this.NOT_SUPPORTED_ERROR);
+            callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
         }
         this._ledger.getAppConfiguration((config)=> {
@@ -107,7 +107,7 @@ class LedgerWallet {
      */
     getAccounts(callback, askForOnDeviceConfirmation = true) {
         if (!this._isU2FSupported) {
-            callback(this.NOT_SUPPORTED_ERROR);
+            callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
         }
         if (this._accounts !== undefined) {
@@ -124,7 +124,7 @@ class LedgerWallet {
             // Ledger returns checksumed addresses (https://github.com/ethereum/EIPs/issues/55)
             // and Provider engine doesn't handle them correctly, that's why we coerce them to usual addresses
             this._accounts = [result.address.toLowerCase()];
-            callback(undefined, this._accounts);
+            callback(null, this._accounts);
         }, askForOnDeviceConfirmation, chainCode);
     }
 
@@ -135,7 +135,7 @@ class LedgerWallet {
      */
     signTransaction(txData, callback) {
         if (!this._isU2FSupported) {
-            callback(this.NOT_SUPPORTED_ERROR);
+            callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
         }
         // Encode using ethereumjs-tx
