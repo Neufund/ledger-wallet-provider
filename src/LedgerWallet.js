@@ -4,7 +4,7 @@ const Tx = require("ethereumjs-tx");
 const u2fApi = require("u2f-api");
 
 /**
- *  @class LedgerWalletSubprovider
+ *  @class LedgerWallet
  *
  *
  *  Paths:
@@ -32,7 +32,7 @@ const u2fApi = require("u2f-api");
  *  https://github.com/MetaMask/metamask-plugin/blob/master/app/scripts/keyrings/hd.js
  *
  */
-class LedgerWalletSubprovider {
+class LedgerWallet {
     constructor() {
         this._path = "44'/60'/0'/0";
         this._accounts = undefined;
@@ -50,7 +50,7 @@ class LedgerWalletSubprovider {
      * and have a special case for firefox FIDO extension
      * @param cb
      */
-    isSupported(cb) {
+    static isSupported(cb) {
         if (window.u2f.getApiVersion) {
             // u2f object was not found. Using Google polyfill
             // Use user-agent based check
@@ -153,4 +153,4 @@ class LedgerWalletSubprovider {
     }
 }
 
-module.exports = LedgerWalletSubprovider;
+module.exports = LedgerWallet;
