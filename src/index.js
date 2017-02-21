@@ -34,11 +34,11 @@ const u2fApi = require('u2f-api');
  */
 class LedgerWalletSubprovider {
     constructor() {
-        this.path = "44'/60'/0'/0";
-        this.accounts = undefined;
-        this.scrambleKey = "w0w"; // Hardcoded key for the Ledger Nano S
-        this.ledger3 = new Ledger3(this.scrambleKey);
-        this.ledger = new LedgerEth(this.ledger3);
+        this._path = "44'/60'/0'/0";
+        this._accounts = undefined;
+        this._scrambleKey = "w0w"; // Hardcoded key for the Ledger Nano S
+        this._ledger3 = new Ledger3(this._scrambleKey);
+        this._ledger = new LedgerEth(this._ledger3);
         this.getAccounts = this.getAccounts.bind(this);
         this.signTransaction = this.signTransaction.bind(this);
     }
@@ -68,7 +68,7 @@ class LedgerWalletSubprovider {
      * @param cb
      */
     getAppConfig(cb) {
-        this.ledger.getAppConfiguration((config)=> {
+        this._ledger.getAppConfiguration((config)=> {
             // TODO: Need at least version 1.0.4 for EIP155 signing
             cb(config);
         });
@@ -87,20 +87,20 @@ class LedgerWalletSubprovider {
      */
     getAccounts(callback, askForOnDeviceConfirmation = true) {
         var self = this;
-        if (this.accounts !== undefined) {
-            callback(undefined, this.accounts);
+        if (this._accounts !== undefined) {
+            callback(undefined, this._accounts);
             return;
         }
 
         const chainCode = false; // Include the chain code
-        this.ledger.getAddress(this.path, (result, error)=> {
+        this._ledger.getAddress(this._path, (result, error)=> {
             if (typeof result === undefined) {
                 callback(error, result);
             }
             // Ledger returns checksumed addresses (https://github.com/ethereum/EIPs/issues/55)
             // and Provider engine doesn't handle them correctly, that's why we coerce them to usual addresses
-            self.accounts = [result.address.toLowerCase()];
-            callback(error, self.accounts);
+            self._accounts = [result.address.toLowerCase()];
+            callback(error, self._accounts);
         }, askForOnDeviceConfirmation, chainCode);
     }
 
@@ -130,8 +130,8 @@ class LedgerWalletSubprovider {
             // Encode as hex-rlp for Ledger
             const hex = tx.serialize().toString('hex');
 
-            // Pass to ledger for signing
-            self.ledger.signTransaction(self.path, hex, (result, error)=> {
+            // Pass to _ledger for signing
+            self._ledger.signTransaction(self._path, hex, (result, error)=> {
                 if (error) callback(error);
 
                 // Store signature in transaction
