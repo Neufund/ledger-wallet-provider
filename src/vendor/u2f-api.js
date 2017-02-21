@@ -15,7 +15,6 @@
  * @type {Object}
  */
 var u2f = u2f || {};
-window.u2f = u2f;
 
 /**
  * FIDO U2F Javascript API Version

@@ -2,6 +2,7 @@ const Ledger3 = require("./vendor/ledger3.js");
 const LedgerEth = require("./vendor/ledger-eth.js");
 const Tx = require("ethereumjs-tx");
 const u2fApi = require("u2f-api");
+const U2F = require("./vendor/u2f-api");
 
 /**
  *  @class LedgerWallet
@@ -39,40 +40,41 @@ class LedgerWallet {
         this._scrambleKey = "w0w"; // Hardcoded key for the Ledger Nano S
         this._ledger3 = new Ledger3(this._scrambleKey);
         this._ledger = new LedgerEth(this._ledger3);
+        this._isU2FSupported = null;
         this.getAccounts = this.getAccounts.bind(this);
         this.signTransaction = this.signTransaction.bind(this);
+        LedgerWallet.isSupported().then((isSupported)=> {
+            this._isU2FSupported = isSupported;
+        });
     }
+
+    static NOT_SUPPORTED_ERROR = new Error(
+        "LedgerWallet uses U2F which is not supported by your browser. " +
+        "Use Chrome, Opera or Firefox with a U2F extension." +
+        "Also make sure you're on an HTTPS connection");
 
     /**
      * Checks if the browser supports u2f.
-     * Currently there is no god way to do feature-detection,
-     * so we do user-agent detection
-     * and have a special case for firefox FIDO extension
-     * @param cb
+     * Currently there is no good way to do feature-detection,
+     * so we call getApiVersion and wait for 100ms
      */
-    static isSupported(cb) {
-        if (window.u2f.getApiVersion) {
-            // u2f object was not found. Using Google polyfill
-            // Use user-agent based check
-            u2fApi.isSupported().then((supported)=>cb(supported));
-        } else {
-            // u2f object is found (Firefox with extension)
-            cb(true);
-        }
-    }
-
-    /**
-     * Gets the version of installed ethereum app
-     * Check the isSupported() before calling that function
-     * otherwise it never returns
-     * @param cb
-     */
-    getAppConfig(cb) {
-        this._ledger.getAppConfiguration((config)=> {
-            // TODO: Need at least version 1.0.4 for EIP155 signing
-            cb(config);
+    static async isSupported() {
+        new Promise((resolve, reject)=> {
+            if (window.u2f) {
+                // u2f object is found (Firefox with extension)
+                resolve(true);
+            } else {
+                // u2f object was not found. Using Google polyfill
+                const intervalId = setInterval(()=> {
+                    resolve(false);
+                }, 100);
+                U2F.getApiVersion((version)=> {
+                    clearInterval(intervalId);
+                    resolve(true);
+                });
+            }
         });
-    }
+    };
 
     /**
      @typedef {function} failableCallback
@@ -81,12 +83,33 @@ class LedgerWallet {
      */
 
     /**
+     * Gets the version of installed ethereum app
+     * Check the isSupported() before calling that function
+     * otherwise it never returns
+     * @param {failableCallback} callback
+     */
+    getAppConfig(callback) {
+        if (!this._isU2FSupported) {
+            callback(this.NOT_SUPPORTED_ERROR);
+            return;
+        }
+        this._ledger.getAppConfiguration((config)=> {
+            // TODO: Need at least version 1.0.4 for EIP155 signing
+            callback(null, config);
+        });
+    }
+
+
+    /**
      * Gets a list of accounts from a device
      * @param {failableCallback} callback
      * @param askForOnDeviceConfirmation
      */
     getAccounts(callback, askForOnDeviceConfirmation = true) {
-        var self = this;
+        if (!this._isU2FSupported) {
+            callback(this.NOT_SUPPORTED_ERROR);
+            return;
+        }
         if (this._accounts !== undefined) {
             callback(undefined, this._accounts);
             return;
@@ -99,8 +122,8 @@ class LedgerWallet {
             }
             // Ledger returns checksumed addresses (https://github.com/ethereum/EIPs/issues/55)
             // and Provider engine doesn't handle them correctly, that's why we coerce them to usual addresses
-            self._accounts = [result.address.toLowerCase()];
-            callback(error, self._accounts);
+            this._accounts = [result.address.toLowerCase()];
+            callback(error, this._accounts);
         }, askForOnDeviceConfirmation, chainCode);
     }
 
@@ -110,8 +133,10 @@ class LedgerWallet {
      * @param {failableCallback} callback - callback
      */
     signTransaction(txData, callback) {
-        var self = this;
-
+        if (!this._isU2FSupported) {
+            callback(this.NOT_SUPPORTED_ERROR);
+            return;
+        }
         // Encode using ethereumjs-tx
         var tx = new Tx(txData);
 
@@ -131,7 +156,7 @@ class LedgerWallet {
             const hex = tx.serialize().toString("hex");
 
             // Pass to _ledger for signing
-            self._ledger.signTransaction(self._path, hex, (result, error)=> {
+            this._ledger.signTransaction(this._path, hex, (result, error)=> {
                 if (error) callback(error);
 
                 // Store signature in transaction
