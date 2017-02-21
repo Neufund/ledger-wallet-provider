@@ -59,17 +59,17 @@ class LedgerWallet {
      * so we call getApiVersion and wait for 100ms
      */
     static async isSupported() {
-        new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject)=> {
             if (window.u2f) {
                 // u2f object is found (Firefox with extension)
                 resolve(true);
             } else {
                 // u2f object was not found. Using Google polyfill
-                const intervalId = setInterval(()=> {
+                const intervalId = setTimeout(()=> {
                     resolve(false);
                 }, 100);
                 U2F.getApiVersion((version)=> {
-                    clearInterval(intervalId);
+                    clearTimeout(intervalId);
                     resolve(true);
                 });
             }
@@ -117,13 +117,14 @@ class LedgerWallet {
 
         const chainCode = false; // Include the chain code
         this._ledger.getAddress(this._path, (result, error)=> {
-            if (typeof result === undefined) {
+            if (error) {
                 callback(error, result);
+                return;
             }
             // Ledger returns checksumed addresses (https://github.com/ethereum/EIPs/issues/55)
             // and Provider engine doesn't handle them correctly, that's why we coerce them to usual addresses
             this._accounts = [result.address.toLowerCase()];
-            callback(error, this._accounts);
+            callback(undefined, this._accounts);
         }, askForOnDeviceConfirmation, chainCode);
     }
 
