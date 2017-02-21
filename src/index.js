@@ -1,7 +1,7 @@
-const Ledger3 = require('./vendor/ledger3.js');
-const LedgerEth = require('./vendor/ledger-eth.js');
-const Tx = require('ethereumjs-tx');
-const u2fApi = require('u2f-api');
+const Ledger3 = require("./vendor/ledger3.js");
+const LedgerEth = require("./vendor/ledger-eth.js");
+const Tx = require("ethereumjs-tx");
+const u2fApi = require("u2f-api");
 
 /**
  *  @class LedgerWalletSubprovider
@@ -128,25 +128,25 @@ class LedgerWalletSubprovider {
             tx.raw[8] = Buffer.from([]);         // s
 
             // Encode as hex-rlp for Ledger
-            const hex = tx.serialize().toString('hex');
+            const hex = tx.serialize().toString("hex");
 
             // Pass to _ledger for signing
             self._ledger.signTransaction(self._path, hex, (result, error)=> {
                 if (error) callback(error);
 
                 // Store signature in transaction
-                tx.v = new Buffer(result.v, 'hex');
-                tx.r = new Buffer(result.r, 'hex');
-                tx.s = new Buffer(result.s, 'hex');
+                tx.v = new Buffer(result.v, "hex");
+                tx.r = new Buffer(result.r, "hex");
+                tx.s = new Buffer(result.s, "hex");
 
                 // EIP155: v should be chain_id * 2 + {35, 36}
                 const signed_chain_id = Math.floor((tx.v[0] - 35) / 2);
                 if (signed_chain_id !== chain_id) {
-                    callback('Invalid signature received. Please update your Ledger Nano S.');
+                    callback("Invalid signature received. Please update your Ledger Nano S.");
                 }
 
                 // Return the signed raw transaction
-                var rawTx = '0x' + tx.serialize().toString('hex');
+                var rawTx = "0x" + tx.serialize().toString("hex");
                 callback(undefined, rawTx);
             })
         })
