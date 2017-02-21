@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "ethereumjs-tx": "^1.2.2",
-    "u2f-api": "0.0.9"
+    "u2f-api": "0.0.9",
+    "web3-provider-engine": "^9.1.0"
   }
 }
