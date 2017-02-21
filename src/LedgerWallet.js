@@ -4,6 +4,11 @@ const Tx = require("ethereumjs-tx");
 const u2fApi = require("u2f-api");
 const U2F = require("./vendor/u2f-api");
 
+
+const NOT_SUPPORTED_ERROR_MSG =
+    "LedgerWallet uses U2F which is not supported by your browser. " +
+    "Use Chrome, Opera or Firefox with a U2F extension." +
+    "Also make sure you're on an HTTPS connection";
 /**
  *  @class LedgerWallet
  *
@@ -47,11 +52,6 @@ class LedgerWallet {
             this._isU2FSupported = isSupported;
         });
     }
-
-    static NOT_SUPPORTED_ERROR_MSG =
-        "LedgerWallet uses U2F which is not supported by your browser. " +
-        "Use Chrome, Opera or Firefox with a U2F extension." +
-        "Also make sure you're on an HTTPS connection";
 
     /**
      * Checks if the browser supports u2f.
