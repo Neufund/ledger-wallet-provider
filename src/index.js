@@ -4,8 +4,8 @@ import LedgerWallet from "./LedgerWallet";
 function LedgerWalletSubproviderFactory(){
     const LedgerWalletSubprovider = new HookedWalletSubprovider(new LedgerWallet());
 
-    //So that you can check before registering and handle an error.
-    //Otherwise constructor will throw.
+    // This convenience method lets you handle the case where your users browser doesn't support U2F
+    // before adding the LedgerWalletSubprovider to a providerEngine instance.
     LedgerWalletSubprovider.isSupported = LedgerWallet.isSupported;
 
     return LedgerWalletSubprovider;
