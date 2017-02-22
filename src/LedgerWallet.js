@@ -111,7 +111,7 @@ class LedgerWallet {
             return;
         }
         if (this._accounts !== undefined) {
-            callback(undefined, this._accounts);
+            callback(null, this._accounts);
             return;
         }
 
