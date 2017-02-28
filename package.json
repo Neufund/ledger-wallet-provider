@@ -1,6 +1,6 @@
 {
   "name": "ledger-wallet-provider",
-  "version": "1.6.4",
+  "version": "1.6.5",
   "description": "Ledger Nano S wallet provider for the Web3 ProviderEngine",
   "main": "lib/index.js",
   "scripts": {
@@ -19,10 +19,11 @@
   },
   "homepage": "https://github.com/Neufund/ledger-wallet-provider#readme",
   "devDependencies": {
-    "babel-cli": "^6.22.2",
+    "babel-cli": "^6.23.0",
     "babel-core": "^6.22.1",
     "babel-plugin-transform-class-properties": "^6.23.0",
-    "babel-preset-es2015": "^6.22.0"
+    "babel-preset-es2015": "^6.22.0",
+    "babel-preset-es2017": "^6.22.0"
   },
   "dependencies": {
     "ethereumjs-tx": "^1.2.2",
