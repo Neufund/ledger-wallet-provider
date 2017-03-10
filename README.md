@@ -22,7 +22,7 @@ In order to have a working provider you can pass to your web3, you will need the
 npm install web3-provider-engine --save
 ```
 ```
-npm install web3.js --save
+npm install web3 --save
 ```
 
 In your project, add the following:
@@ -38,7 +38,7 @@ var web3 = new Web3(engine);
 
 var ledgerWalletSubProvider = LedgerWalletSubproviderFactory();
 engine.addProvider(ledgerWalletSubProvider);
-engine.start()
+engine.start();
 
 web3.eth.getAccounts(console.log);
 ```
