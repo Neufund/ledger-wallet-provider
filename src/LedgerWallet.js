@@ -48,7 +48,7 @@ class LedgerWallet {
         this._isU2FSupported = null;
         this.getAccounts = this.getAccounts.bind(this);
         this.signTransaction = this.signTransaction.bind(this);
-        LedgerWallet.isSupported().then((isSupported)=> {
+        LedgerWallet.isSupported().then((isSupported) => {
             this._isU2FSupported = isSupported;
         });
     }
@@ -59,22 +59,35 @@ class LedgerWallet {
      * so we call getApiVersion and wait for 100ms
      */
     static async isSupported() {
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             if (window.u2f) {
                 // u2f object is found (Firefox with extension)
                 resolve(true);
             } else {
                 // u2f object was not found. Using Google polyfill
-                const intervalId = setTimeout(()=> {
+                const intervalId = setTimeout(() => {
                     resolve(false);
                 }, 3000);
-                U2F.getApiVersion((version)=> {
+                U2F.getApiVersion((version) => {
                     clearTimeout(intervalId);
                     resolve(true);
                 });
             }
         });
     };
+
+    ensureSupported(callback, continuation) {
+        let intervalId = setInterval(() => {
+            if (this._isU2FSupported !== null) {
+                clearInterval(intervalId);
+                if (this._isU2FSupported) {
+                    continuation();
+                } else {
+                    callback(new Error(NOT_SUPPORTED_ERROR_MSG));
+                }
+            }
+        }, 200);
+    }
 
     /**
      @typedef {function} failableCallback
@@ -89,17 +102,11 @@ class LedgerWallet {
      * @param {failableCallback} callback
      */
     getAppConfig(callback) {
-        if (this._isU2FSupported === null){
-            setTimeout(()=>this.getAppConfig(callback), 200);
-            return;
-        }
-        if (!this._isU2FSupported) {
-            callback(new Error(NOT_SUPPORTED_ERROR_MSG));
-            return;
-        }
-        this._ledger.getAppConfiguration((config)=> {
-            // TODO: Need at least version 1.0.4 for EIP155 signing
-            callback(null, config);
+        this.ensureSupported(callback, () => {
+            this._ledger.getAppConfiguration((config) => {
+                // TODO: Need at least version 1.0.4 for EIP155 signing
+                callback(null, config);
+            });
         });
     }
 
@@ -110,30 +117,24 @@ class LedgerWallet {
      * @param askForOnDeviceConfirmation
      */
     getAccounts(callback, askForOnDeviceConfirmation = true) {
-        if (this._isU2FSupported === null){
-            setTimeout(()=>this.getAccounts(callback, askForOnDeviceConfirmation), 200);
-            return;
-        }
-        if (!this._isU2FSupported) {
-            callback(new Error(NOT_SUPPORTED_ERROR_MSG));
-            return;
-        }
-        if (this._accounts !== undefined) {
-            callback(null, this._accounts);
-            return;
-        }
-
-        const chainCode = false; // Include the chain code
-        this._ledger.getAddress(this._path, (result, error)=> {
-            if (error) {
-                callback(error, result);
+        this.ensureSupported(callback, () => {
+            if (this._accounts !== undefined) {
+                callback(null, this._accounts);
                 return;
             }
-            // Ledger returns checksumed addresses (https://github.com/ethereum/EIPs/issues/55)
-            // and Provider engine doesn't handle them correctly, that's why we coerce them to usual addresses
-            this._accounts = [result.address.toLowerCase()];
-            callback(null, this._accounts);
-        }, askForOnDeviceConfirmation, chainCode);
+
+            const chainCode = false; // Include the chain code
+            this._ledger.getAddress(this._path, (result, error) => {
+                if (error) {
+                    callback(error, result);
+                    return;
+                }
+                // Ledger returns checksumed addresses (https://github.com/ethereum/EIPs/issues/55)
+                // and Provider engine doesn't handle them correctly, that's why we coerce them to usual addresses
+                this._accounts = [result.address.toLowerCase()];
+                callback(null, this._accounts);
+            }, askForOnDeviceConfirmation, chainCode);
+        });
     }
 
     /**
@@ -142,52 +143,46 @@ class LedgerWallet {
      * @param {failableCallback} callback - callback
      */
     signTransaction(txData, callback) {
-        if (this._isU2FSupported === null){
-            setTimeout(()=>this.signTransaction(txData, callback), 200);
-            return;
-        }
-        if (!this._isU2FSupported) {
-            callback(new Error(NOT_SUPPORTED_ERROR_MSG));
-            return;
-        }
-        // Encode using ethereumjs-tx
-        let tx = new Tx(txData);
+        this.ensureSupported(callback, () => {
+            // Encode using ethereumjs-tx
+            let tx = new Tx(txData);
 
-        // Fetch the chain id
-        web3.version.getNetwork((error, chain_id)=> {
-            if (error) callback(error);
-
-            // Force chain_id to int
-            chain_id = 0 | chain_id;
-
-            // Set the EIP155 bits
-            tx.raw[6] = Buffer.from([chain_id]); // v
-            tx.raw[7] = Buffer.from([]);         // r
-            tx.raw[8] = Buffer.from([]);         // s
-
-            // Encode as hex-rlp for Ledger
-            const hex = tx.serialize().toString("hex");
-
-            // Pass to _ledger for signing
-            this._ledger.signTransaction(this._path, hex, (result, error)=> {
+            // Fetch the chain id
+            web3.version.getNetwork((error, chain_id) => {
                 if (error) callback(error);
 
-                // Store signature in transaction
-                tx.v = new Buffer(result.v, "hex");
-                tx.r = new Buffer(result.r, "hex");
-                tx.s = new Buffer(result.s, "hex");
+                // Force chain_id to int
+                chain_id = 0 | chain_id;
 
-                // EIP155: v should be chain_id * 2 + {35, 36}
-                const signed_chain_id = Math.floor((tx.v[0] - 35) / 2);
-                if (signed_chain_id !== chain_id) {
-                    callback("Invalid signature received. Please update your Ledger Nano S.");
-                }
+                // Set the EIP155 bits
+                tx.raw[6] = Buffer.from([chain_id]); // v
+                tx.raw[7] = Buffer.from([]);         // r
+                tx.raw[8] = Buffer.from([]);         // s
 
-                // Return the signed raw transaction
-                const rawTx = "0x" + tx.serialize().toString("hex");
-                callback(undefined, rawTx);
+                // Encode as hex-rlp for Ledger
+                const hex = tx.serialize().toString("hex");
+
+                // Pass to _ledger for signing
+                this._ledger.signTransaction(this._path, hex, (result, error) => {
+                    if (error) callback(error);
+
+                    // Store signature in transaction
+                    tx.v = new Buffer(result.v, "hex");
+                    tx.r = new Buffer(result.r, "hex");
+                    tx.s = new Buffer(result.s, "hex");
+
+                    // EIP155: v should be chain_id * 2 + {35, 36}
+                    const signed_chain_id = Math.floor((tx.v[0] - 35) / 2);
+                    if (signed_chain_id !== chain_id) {
+                        callback("Invalid signature received. Please update your Ledger Nano S.");
+                    }
+
+                    // Return the signed raw transaction
+                    const rawTx = "0x" + tx.serialize().toString("hex");
+                    callback(undefined, rawTx);
+                })
             })
-        })
+        });
     }
 }
 
