@@ -89,6 +89,10 @@ class LedgerWallet {
      * @param {failableCallback} callback
      */
     getAppConfig(callback) {
+        if (this._isU2FSupported === undefined){
+            setTimeout(()=>this.getAppConfig(callback), 200);
+            return;
+        }
         if (!this._isU2FSupported) {
             callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
@@ -106,6 +110,10 @@ class LedgerWallet {
      * @param askForOnDeviceConfirmation
      */
     getAccounts(callback, askForOnDeviceConfirmation = true) {
+        if (this._isU2FSupported === undefined){
+            setTimeout(()=>this.getAccounts(callback, askForOnDeviceConfirmation), 200);
+            return;
+        }
         if (!this._isU2FSupported) {
             callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
@@ -134,12 +142,16 @@ class LedgerWallet {
      * @param {failableCallback} callback - callback
      */
     signTransaction(txData, callback) {
+        if (this._isU2FSupported === undefined){
+            setTimeout(()=>this.signTransaction(txData, callback), 200);
+            return;
+        }
         if (!this._isU2FSupported) {
             callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
         }
         // Encode using ethereumjs-tx
-        var tx = new Tx(txData);
+        let tx = new Tx(txData);
 
         // Fetch the chain id
         web3.version.getNetwork((error, chain_id)=> {
@@ -172,7 +184,7 @@ class LedgerWallet {
                 }
 
                 // Return the signed raw transaction
-                var rawTx = "0x" + tx.serialize().toString("hex");
+                const rawTx = "0x" + tx.serialize().toString("hex");
                 callback(undefined, rawTx);
             })
         })
