@@ -89,7 +89,7 @@ class LedgerWallet {
      * @param {failableCallback} callback
      */
     getAppConfig(callback) {
-        if (this._isU2FSupported === undefined){
+        if (this._isU2FSupported === null){
             setTimeout(()=>this.getAppConfig(callback), 200);
             return;
         }
@@ -110,7 +110,7 @@ class LedgerWallet {
      * @param askForOnDeviceConfirmation
      */
     getAccounts(callback, askForOnDeviceConfirmation = true) {
-        if (this._isU2FSupported === undefined){
+        if (this._isU2FSupported === null){
             setTimeout(()=>this.getAccounts(callback, askForOnDeviceConfirmation), 200);
             return;
         }
@@ -142,7 +142,7 @@ class LedgerWallet {
      * @param {failableCallback} callback - callback
      */
     signTransaction(txData, callback) {
-        if (this._isU2FSupported === undefined){
+        if (this._isU2FSupported === null){
             setTimeout(()=>this.signTransaction(txData, callback), 200);
             return;
         }
