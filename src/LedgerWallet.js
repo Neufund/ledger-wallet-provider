@@ -103,8 +103,12 @@ class LedgerWallet {
      */
     getAppConfig(callback) {
         this.ensureSupported(callback, () => {
-            this._ledger.getAppConfiguration((config) => {
+            this._ledger.getAppConfiguration((config, error) => {
                 // TODO: Need at least version 1.0.4 for EIP155 signing
+                if (error) {
+                    callback(error);
+                    return;
+                }
                 callback(null, config);
             });
         });
