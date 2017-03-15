@@ -3,7 +3,7 @@ const LedgerEth = require("./vendor/ledger-eth.js");
 const Tx = require("ethereumjs-tx");
 const u2fApi = require("u2f-api");
 const U2F = require("./vendor/u2f-api");
-const ledger = require("ledgerco");
+const ledger = require("ledgerco/src/index-browserify");
 
 
 const NOT_SUPPORTED_ERROR_MSG =
@@ -95,14 +95,9 @@ class LedgerWallet {
             callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
         }
-        this._eth.getAppConfiguration((config, error) => {
-            // TODO: Need at least version 1.0.4 for EIP155 signing
-            if (error) {
-                callback(error);
-                return;
-            }
-            callback(null, config);
-        });
+        this._eth.getAppConfiguration_async()
+            .then(config => callback(null, config))
+            .catch(error => callback(error))
     }
 
 
@@ -122,16 +117,12 @@ class LedgerWallet {
         }
 
         const chainCode = false; // Include the chain code
-        this._eth.getAddress(this._path, (result, error) => {
-            if (error) {
-                callback(error, result);
-                return;
-            }
-            // Ledger returns checksumed addresses (https://github.com/ethereum/EIPs/issues/55)
-            // and Provider engine doesn't handle them correctly, that's why we coerce them to usual addresses
-            this._accounts = [result.address.toLowerCase()];
-            callback(null, this._accounts);
-        }, askForOnDeviceConfirmation, chainCode);
+        this._eth.getAddress_async(this._path, askForOnDeviceConfirmation, chainCode)
+            .then(result => {
+                this._accounts = [result.address.toLowerCase()];
+                callback(null, this._accounts);
+            })
+            .catch(error => callback(error));
     }
 
     /**
@@ -163,24 +154,24 @@ class LedgerWallet {
             const hex = tx.serialize().toString("hex");
 
             // Pass to _ledger for signing
-            this._eth.signTransaction(this._path, hex, (result, error) => {
-                if (error) callback(error);
+            this._eth.signTransaction(this._path, hex)
+                .then(result => {
+                    // Store signature in transaction
+                    tx.v = new Buffer(result.v, "hex");
+                    tx.r = new Buffer(result.r, "hex");
+                    tx.s = new Buffer(result.s, "hex");
 
-                // Store signature in transaction
-                tx.v = new Buffer(result.v, "hex");
-                tx.r = new Buffer(result.r, "hex");
-                tx.s = new Buffer(result.s, "hex");
+                    // EIP155: v should be chain_id * 2 + {35, 36}
+                    const signed_chain_id = Math.floor((tx.v[0] - 35) / 2);
+                    if (signed_chain_id !== chain_id) {
+                        callback("Invalid signature received. Please update your Ledger Nano S.");
+                    }
 
-                // EIP155: v should be chain_id * 2 + {35, 36}
-                const signed_chain_id = Math.floor((tx.v[0] - 35) / 2);
-                if (signed_chain_id !== chain_id) {
-                    callback("Invalid signature received. Please update your Ledger Nano S.");
-                }
-
-                // Return the signed raw transaction
-                const rawTx = "0x" + tx.serialize().toString("hex");
-                callback(undefined, rawTx);
-            })
+                    // Return the signed raw transaction
+                    const rawTx = "0x" + tx.serialize().toString("hex");
+                    callback(undefined, rawTx);
+                })
+                .catch(error => callback(error))
         })
     }
 }
