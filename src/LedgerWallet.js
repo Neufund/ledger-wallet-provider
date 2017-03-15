@@ -1,10 +1,3 @@
-const Ledger3 = require("./vendor/ledger3.js");
-const LedgerEth = require("./vendor/ledger-eth.js");
-const {Tx} = EthJS;
-const u2fApi = require("u2f-api");
-const U2F = require("./vendor/u2f-api");
-
-
 const NOT_SUPPORTED_ERROR_MSG =
     "LedgerWallet uses U2F which is not supported by your browser. " +
     "Use Chrome, Opera or Firefox with a U2F extension." +
@@ -73,7 +66,7 @@ class LedgerWallet {
                 const intervalId = setTimeout(() => {
                     resolve(false);
                 }, 3000);
-                U2F.getApiVersion((version) => {
+                u2f.getApiVersion((version) => {
                     clearTimeout(intervalId);
                     resolve(true);
                 });
@@ -138,7 +131,7 @@ class LedgerWallet {
             return;
         }
         // Encode using ethereumjs-tx
-        let tx = new Tx(txData);
+        let tx = new EthJS.Tx(txData);
 
         // Fetch the chain id
         web3.version.getNetwork((error, chain_id) => {
