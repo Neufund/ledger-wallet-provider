@@ -1,6 +1,6 @@
 const Ledger3 = require("./vendor/ledger3.js");
 const LedgerEth = require("./vendor/ledger-eth.js");
-const Tx = require("ethereumjs-tx");
+const {Tx} = EthJS;
 const u2fApi = require("u2f-api");
 const U2F = require("./vendor/u2f-api");
 
