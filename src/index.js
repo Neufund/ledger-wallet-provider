@@ -2,7 +2,7 @@ import HookedWalletSubprovider from "web3-provider-engine/subproviders/hooked-wa
 import LedgerWallet from "./LedgerWallet";
 
 
-export default async function(){
+export default async function () {
     const ledger = new LedgerWallet();
     await ledger.init();
     const LedgerWalletSubprovider = new HookedWalletSubprovider(ledger);
@@ -10,6 +10,7 @@ export default async function(){
     // This convenience method lets you handle the case where your users browser doesn't support U2F
     // before adding the LedgerWalletSubprovider to a providerEngine instance.
     LedgerWalletSubprovider.isSupported = ledger.isU2FSupported;
+    LedgerWalletSubprovider.ledger = ledger;
 
     return LedgerWalletSubprovider;
 };

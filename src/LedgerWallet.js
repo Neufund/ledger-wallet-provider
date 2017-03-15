@@ -3,7 +3,6 @@ const LedgerEth = require("./vendor/ledger-eth.js");
 const Tx = require("ethereumjs-tx");
 const u2fApi = require("u2f-api");
 const U2F = require("./vendor/u2f-api");
-const ledger = require("ledgerco/src/index-browserify");
 
 
 const NOT_SUPPORTED_ERROR_MSG =
@@ -51,8 +50,12 @@ class LedgerWallet {
 
     async init() {
         this.isU2FSupported = await LedgerWallet.isSupported();
-        const comm = await ledger.comm_u2f.create_async();
-        this._eth = new ledger.eth(comm);
+        const comm = await window.ledger.comm_u2f.create_async();
+        this.eth = new window.ledger.eth(comm);
+    }
+
+    async close() {
+        this.eth.comm.close_async()
     }
 
     /**
@@ -95,11 +98,10 @@ class LedgerWallet {
             callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
         }
-        this._eth.getAppConfiguration_async()
+        this.eth.getAppConfiguration_async()
             .then(config => callback(null, config))
             .catch(error => callback(error))
     }
-
 
     /**
      * Gets a list of accounts from a device
@@ -117,7 +119,7 @@ class LedgerWallet {
         }
 
         const chainCode = false; // Include the chain code
-        this._eth.getAddress_async(this._path, askForOnDeviceConfirmation, chainCode)
+        this.eth.getAddress_async(this._path, askForOnDeviceConfirmation, chainCode)
             .then(result => {
                 this._accounts = [result.address.toLowerCase()];
                 callback(null, this._accounts);
@@ -154,7 +156,7 @@ class LedgerWallet {
             const hex = tx.serialize().toString("hex");
 
             // Pass to _ledger for signing
-            this._eth.signTransaction(this._path, hex)
+            this.eth.signTransaction(this._path, hex)
                 .then(result => {
                     // Store signature in transaction
                     tx.v = new Buffer(result.v, "hex");
