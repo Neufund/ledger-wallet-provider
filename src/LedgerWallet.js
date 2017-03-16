@@ -64,7 +64,7 @@ class LedgerWallet {
                 const intervalId = setTimeout(() => {
                     resolve(false);
                 }, 3000);
-                u2f.getApiVersion((version) => {
+                window.u2f.getApiVersion((version) => {
                     clearTimeout(intervalId);
                     resolve(true);
                 });
