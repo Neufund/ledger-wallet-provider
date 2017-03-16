@@ -1,6 +1,6 @@
 import ledger from 'ledgerco/src/index-browserify';
 import EthereumTx from 'ethereumjs-tx';
-import u2f from 'u2f-api';
+import u2f from './u2f-api';
 
 const NOT_SUPPORTED_ERROR_MSG =
     "LedgerWallet uses U2F which is not supported by your browser. " +
