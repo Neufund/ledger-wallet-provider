@@ -1,6 +1,7 @@
 import ledger from 'ledgerco/src/index-browserify';
 import EthereumTx from 'ethereumjs-tx';
 import u2f from './u2f-api';
+if (window.u2f === undefined) window.u2f = u2f;
 
 const NOT_SUPPORTED_ERROR_MSG =
     "LedgerWallet uses U2F which is not supported by your browser. " +
@@ -92,7 +93,7 @@ class LedgerWallet {
      * otherwise it never returns
      * @param {failableCallback} callback
      */
-     async getAppConfig(callback) {
+    async getAppConfig(callback) {
         if (!this.isU2FSupported) {
             callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
@@ -149,7 +150,7 @@ class LedgerWallet {
         let tx = new EthereumTx(txData);
 
         // Fetch the chain id
-        web3.version.getNetwork(async function(error, chain_id) {
+        web3.version.getNetwork(async function (error, chain_id) {
             if (error) callback(error);
 
             // Force chain_id to int
