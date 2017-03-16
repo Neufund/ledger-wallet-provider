@@ -58,7 +58,7 @@ class LedgerWallet {
      */
     static async isSupported() {
         return new Promise((resolve, reject) => {
-            if (window.u2f) {
+            if (window.u2f && !window.u2f.getApiVersion) {
                 // u2f object is found (Firefox with extension)
                 resolve(true);
             } else {
