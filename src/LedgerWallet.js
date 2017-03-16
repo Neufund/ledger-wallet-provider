@@ -128,7 +128,7 @@ class LedgerWallet {
             this._closeLedgerConnection(eth);
             callback(error, data);
         };
-        this.eth.getAddress_async(this._path, askForOnDeviceConfirmation, chainCode)
+        eth.getAddress_async(this._path, askForOnDeviceConfirmation, chainCode)
             .then(result => {
                 this._accounts = [result.address.toLowerCase()];
                 cleanupCallback(null, this._accounts);
