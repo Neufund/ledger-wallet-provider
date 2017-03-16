@@ -92,12 +92,12 @@ class LedgerWallet {
      * otherwise it never returns
      * @param {failableCallback} callback
      */
-     getAppConfig(callback) {
+     async getAppConfig(callback) {
         if (!this.isU2FSupported) {
             callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
         }
-        let eth = this._getLedgerConnection();
+        let eth = await this._getLedgerConnection();
         let cleanupCallback = (error, data) => {
             this._closeLedgerConnection(eth);
             callback(error, data);
@@ -112,7 +112,7 @@ class LedgerWallet {
      * @param {failableCallback} callback
      * @param askForOnDeviceConfirmation
      */
-    getAccounts(callback, askForOnDeviceConfirmation = true) {
+    async getAccounts(callback, askForOnDeviceConfirmation = true) {
         if (!this.isU2FSupported) {
             callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
@@ -122,7 +122,7 @@ class LedgerWallet {
             return;
         }
         const chainCode = false; // Include the chain code
-        let eth = this._getLedgerConnection();
+        let eth = await this._getLedgerConnection();
         let cleanupCallback = (error, data) => {
             this._closeLedgerConnection(eth);
             callback(error, data);
@@ -140,7 +140,7 @@ class LedgerWallet {
      * @param {object} txData - transaction to sign
      * @param {failableCallback} callback - callback
      */
-    signTransaction(txData, callback) {
+    async signTransaction(txData, callback) {
         if (!this.isU2FSupported) {
             callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
@@ -149,7 +149,7 @@ class LedgerWallet {
         let tx = new EthereumTx(txData);
 
         // Fetch the chain id
-        web3.version.getNetwork((error, chain_id) => {
+        web3.version.getNetwork(async function(error, chain_id) {
             if (error) callback(error);
 
             // Force chain_id to int
@@ -163,7 +163,7 @@ class LedgerWallet {
             // Encode as hex-rlp for Ledger
             const hex = tx.serialize().toString("hex");
 
-            let eth = this._getLedgerConnection();
+            let eth = await this._getLedgerConnection();
             let cleanupCallback = (error, data) => {
                 this._closeLedgerConnection(eth);
                 callback(error, data);
