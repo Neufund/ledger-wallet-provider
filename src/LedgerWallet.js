@@ -171,7 +171,7 @@ class LedgerWallet {
                 callback(error, data);
             };
             // Pass to _ledger for signing
-            eth.signTransaction(this._path, hex)
+            eth.signTransaction_async(this._path, hex)
                 .then(result => {
                     // Store signature in transaction
                     tx.v = new Buffer(result.v, "hex");
