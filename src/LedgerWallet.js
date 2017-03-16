@@ -44,6 +44,7 @@ class LedgerWallet {
         this.getAppConfig = this.getAppConfig.bind(this);
         this.getAccounts = this.getAccounts.bind(this);
         this.signTransaction = this.signTransaction.bind(this);
+        this._getLedgerConnection = this._getLedgerConnection.bind(this);
     }
 
     async init() {
