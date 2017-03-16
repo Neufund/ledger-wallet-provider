@@ -189,7 +189,7 @@ class LedgerWallet {
                     cleanupCallback(undefined, rawTx);
                 })
                 .catch(error => cleanupCallback(error))
-        })
+        }.bind(this))
     }
 }
 
