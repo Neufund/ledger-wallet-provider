@@ -1,3 +1,6 @@
+import ledger from 'ledgerco/src/index-browserify';
+import EthereumTx from 'ethereumjs-tx';
+
 const NOT_SUPPORTED_ERROR_MSG =
     "LedgerWallet uses U2F which is not supported by your browser. " +
     "Use Chrome, Opera or Firefox with a U2F extension." +
@@ -43,12 +46,6 @@ class LedgerWallet {
 
     async init() {
         this.isU2FSupported = await LedgerWallet.isSupported();
-        const comm = await window.ledger.comm_u2f.create_async();
-        this.eth = new window.ledger.eth(comm);
-    }
-
-    async close() {
-        this.eth.comm.close_async()
     }
 
     /**
@@ -74,6 +71,14 @@ class LedgerWallet {
         });
     };
 
+    async _getLedgerConnection() {
+        return new ledger.eth(await ledger.comm_u2f.create_async());
+    }
+
+    async _closeLedgerConnection(eth) {
+        eth.comm.close_async()
+    }
+
     /**
      @typedef {function} failableCallback
      @param error
@@ -86,14 +91,19 @@ class LedgerWallet {
      * otherwise it never returns
      * @param {failableCallback} callback
      */
-    getAppConfig(callback) {
+     getAppConfig(callback) {
         if (!this.isU2FSupported) {
             callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
         }
-        this.eth.getAppConfiguration_async()
-            .then(config => callback(null, config))
-            .catch(error => callback(error))
+        let eth = this._getLedgerConnection();
+        let cleanupCallback = (error, data) => {
+            this._closeLedgerConnection(eth);
+            callback(error, data);
+        };
+        eth.getAppConfiguration_async()
+            .then(config => cleanupCallback(null, config))
+            .catch(error => cleanupCallback(error))
     }
 
     /**
@@ -110,14 +120,18 @@ class LedgerWallet {
             callback(null, this._accounts);
             return;
         }
-
         const chainCode = false; // Include the chain code
+        let eth = this._getLedgerConnection();
+        let cleanupCallback = (error, data) => {
+            this._closeLedgerConnection(eth);
+            callback(error, data);
+        };
         this.eth.getAddress_async(this._path, askForOnDeviceConfirmation, chainCode)
             .then(result => {
                 this._accounts = [result.address.toLowerCase()];
-                callback(null, this._accounts);
+                cleanupCallback(null, this._accounts);
             })
-            .catch(error => callback(error));
+            .catch(error => cleanupCallback(error));
     }
 
     /**
@@ -131,7 +145,7 @@ class LedgerWallet {
             return;
         }
         // Encode using ethereumjs-tx
-        let tx = new EthJS.Tx(txData);
+        let tx = new EthereumTx(txData);
 
         // Fetch the chain id
         web3.version.getNetwork((error, chain_id) => {
@@ -148,8 +162,13 @@ class LedgerWallet {
             // Encode as hex-rlp for Ledger
             const hex = tx.serialize().toString("hex");
 
+            let eth = this._getLedgerConnection();
+            let cleanupCallback = (error, data) => {
+                this._closeLedgerConnection(eth);
+                callback(error, data);
+            };
             // Pass to _ledger for signing
-            this.eth.signTransaction(this._path, hex)
+            eth.signTransaction(this._path, hex)
                 .then(result => {
                     // Store signature in transaction
                     tx.v = new Buffer(result.v, "hex");
@@ -159,14 +178,14 @@ class LedgerWallet {
                     // EIP155: v should be chain_id * 2 + {35, 36}
                     const signed_chain_id = Math.floor((tx.v[0] - 35) / 2);
                     if (signed_chain_id !== chain_id) {
-                        callback("Invalid signature received. Please update your Ledger Nano S.");
+                        cleanupCallback("Invalid signature received. Please update your Ledger Nano S.");
                     }
 
                     // Return the signed raw transaction
                     const rawTx = "0x" + tx.serialize().toString("hex");
-                    callback(undefined, rawTx);
+                    cleanupCallback(undefined, rawTx);
                 })
-                .catch(error => callback(error))
+                .catch(error => cleanupCallback(error))
         })
     }
 }
