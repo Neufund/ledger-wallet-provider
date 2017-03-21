@@ -130,10 +130,10 @@ class LedgerWallet {
             callback(error, data);
         };
         eth.getAddress_async(this._path, askForOnDeviceConfirmation, chainCode)
-            .then(result => {
+            .then(function(result) {
                 this._accounts = [result.address.toLowerCase()];
                 cleanupCallback(null, this._accounts);
-            })
+            }.bind(this))
             .catch(error => cleanupCallback(error));
     }
 
