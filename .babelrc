@@ -3,5 +3,5 @@
     "es2015",
     "es2017"
   ],
-  "plugins": ["transform-class-properties", "transform-regenerator"]
+  "plugins": ["transform-class-properties", "transform-regenerator", "transform-runtime"]
 }

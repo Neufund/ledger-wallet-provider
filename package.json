@@ -1,6 +1,6 @@
 {
   "name": "ledger-wallet-provider",
-  "version": "1.14.12",
+  "version": "1.14.13",
   "description": "Ledger Nano S wallet provider for the Web3 ProviderEngine",
   "main": "lib/index.js",
   "scripts": {
@@ -23,10 +23,12 @@
     "babel-core": "^6.22.1",
     "babel-plugin-transform-class-properties": "^6.23.0",
     "babel-plugin-transform-regenerator": "^6.22.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-es2015": "^6.22.0",
     "babel-preset-es2017": "^6.22.0"
   },
   "dependencies": {
+    "babel-runtime": "^6.23.0",
     "ledgerco": "^1.1.2",
     "u2f-api": "^0.0.9",
     "web3-provider-engine": "^11.0.0"
