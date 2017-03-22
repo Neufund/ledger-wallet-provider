@@ -45,6 +45,7 @@ class LedgerWallet {
         this.getAccounts = this.getAccounts.bind(this);
         this.signTransaction = this.signTransaction.bind(this);
         this._getLedgerConnection = this._getLedgerConnection.bind(this);
+        this.connectionOpened = false;
     }
 
     async init() {
@@ -75,11 +76,16 @@ class LedgerWallet {
     };
 
     async _getLedgerConnection() {
+        if (this.connectionOpened) {
+            throw new Error("You can only have one ledger connection active at a time");
+        }
+        this.connectionOpened = true;
         return new ledger.eth(await ledger.comm_u2f.create_async());
     }
 
     async _closeLedgerConnection(eth) {
-        eth.comm.close_async()
+        eth.comm.close_async();
+        this.connectionOpened = false;
     }
 
     /**
@@ -130,7 +136,7 @@ class LedgerWallet {
             callback(error, data);
         };
         eth.getAddress_async(this._path, askForOnDeviceConfirmation, chainCode)
-            .then(function(result) {
+            .then(function (result) {
                 this._accounts = [result.address.toLowerCase()];
                 cleanupCallback(null, this._accounts);
             }.bind(this))
