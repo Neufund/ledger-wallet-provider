@@ -85,8 +85,8 @@ class LedgerWallet {
     }
 
     async _closeLedgerConnection(eth) {
-        await eth.comm.close_async();
         this.connectionOpened = false;
+        await eth.comm.close_async();
     }
 
     /**
