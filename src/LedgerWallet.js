@@ -78,9 +78,10 @@ class LedgerWallet {
     async _getLedgerConnection() {
         if (this.connectionOpened) {
             throw new Error("You can only have one ledger connection active at a time");
+        } else {
+            this.connectionOpened = true;
+            return new ledger.eth(await ledger.comm_u2f.create_async());
         }
-        this.connectionOpened = true;
-        return new ledger.eth(await ledger.comm_u2f.create_async());
     }
 
     async _closeLedgerConnection(eth) {
