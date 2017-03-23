@@ -39,7 +39,7 @@ const NOT_SUPPORTED_ERROR_MSG =
 class LedgerWallet {
     constructor() {
         this._path = "44'/60'/0'/0";
-        this._accounts = undefined;
+        this._accounts = null;
         this.isU2FSupported = null;
         this.getAppConfig = this.getAppConfig.bind(this);
         this.getAccounts = this.getAccounts.bind(this);
@@ -126,7 +126,7 @@ class LedgerWallet {
             callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
         }
-        if (this._accounts !== undefined) {
+        if (this._accounts !== null) {
             callback(null, this._accounts);
             return;
         }
