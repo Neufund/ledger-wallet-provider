@@ -1,6 +1,6 @@
 {
   "name": "ledger-wallet-provider",
-  "version": "1.14.18",
+  "version": "1.14.19",
   "description": "Ledger Nano S wallet provider for the Web3 ProviderEngine",
   "main": "lib/index.js",
   "scripts": {
@@ -30,6 +30,7 @@
   "dependencies": {
     "babel-runtime": "^6.23.0",
     "ledgerco": "^1.1.2",
+    "promise-timeout": "^1.1.1",
     "u2f-api": "^0.0.9",
     "web3-provider-engine": "^11.0.0"
   }

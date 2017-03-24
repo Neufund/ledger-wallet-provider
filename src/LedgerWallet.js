@@ -1,6 +1,7 @@
 import ledger from 'ledgerco/src/index-browserify';
 import EthereumTx from 'ethereumjs-tx';
 import u2f from './u2f-api';
+import {timeout} from 'promise-timeout';
 if (window.u2f === undefined) window.u2f = u2f;
 
 const NOT_SUPPORTED_ERROR_MSG =
@@ -100,8 +101,9 @@ class LedgerWallet {
      * Check the isSupported() before calling that function
      * otherwise it never returns
      * @param {failableCallback} callback
+     * @param ttl - timeout
      */
-    async getAppConfig(callback) {
+    async getAppConfig(callback, ttl) {
         if (!this.isU2FSupported) {
             callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
@@ -111,7 +113,7 @@ class LedgerWallet {
             this._closeLedgerConnection(eth);
             callback(error, data);
         };
-        eth.getAppConfiguration_async()
+        timeout(eth.getAppConfiguration_async(), ttl)
             .then(config => cleanupCallback(null, config))
             .catch(error => cleanupCallback(error))
     }

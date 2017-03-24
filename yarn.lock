@@ -1997,6 +1997,10 @@ process@~0.5.1:
   version "0.5.2"
   resolved "https://registry.yarnpkg.com/process/-/process-0.5.2.tgz#1638d8a8e34c2f440a91db95ab9aeb677fc185cf"
 
+promise-timeout@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/promise-timeout/-/promise-timeout-1.1.1.tgz#9d3f0c834411a17ea81786e0355f7cdf1ecf5597"
+
 promise-to-callback@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/promise-to-callback/-/promise-to-callback-1.0.0.tgz#5d2a749010bfb67d963598fcd3960746a68feef7"
