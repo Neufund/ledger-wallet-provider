@@ -36,8 +36,9 @@ var LedgerWalletSubproviderFactory = require('ledger-wallet-provider').default;
 var engine = new ProviderEngine();
 var web3 = new Web3(engine);
 
-var ledgerWalletSubProvider = LedgerWalletSubproviderFactory();
+var ledgerWalletSubProvider = async LedgerWalletSubproviderFactory();
 engine.addProvider(ledgerWalletSubProvider);
+engine.addProvider(new RpcSubprovider({rpcUrl: '/api'})); // you need RPC endpoint
 engine.start();
 
 web3.eth.getAccounts(console.log);
