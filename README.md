@@ -44,6 +44,15 @@ engine.start();
 web3.eth.getAccounts(console.log);
 ```
 
+To change derivation path that will be used to derive private/public keys on your nano, modify snippet above as follows
+
+```
+var derivation_path = "44'/60'/103'/0'";
+var ledgerWalletSubProvider = async LedgerWalletSubproviderFactory(derivation_path);
+```
+
+All paths must start with `44'/60'` or `44'/61'`.
+
 **Note:** In order to send requests to the Ledger wallet, the user must have done the following:
 - Plugged-in their Ledger Wallet Nano S
 - Input their 4 digit pin

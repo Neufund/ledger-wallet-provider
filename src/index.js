@@ -1,9 +1,8 @@
 import HookedWalletSubprovider from "web3-provider-engine/subproviders/hooked-wallet.js";
 import LedgerWallet from "./LedgerWallet";
 
-
-export default async function () {
-    const ledger = new LedgerWallet();
+export default async function (path_override) {
+    const ledger = new LedgerWallet(path_override);
     await ledger.init();
     const LedgerWalletSubprovider = new HookedWalletSubprovider(ledger);
 

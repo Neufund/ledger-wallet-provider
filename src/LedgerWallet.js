@@ -37,9 +37,15 @@ const NOT_SUPPORTED_ERROR_MSG =
  *  https://github.com/MetaMask/metamask-plugin/blob/master/app/scripts/keyrings/hd.js
  *
  */
+const allowed_hd_paths = ["44'/60'", "44'/61'"];
+
 class LedgerWallet {
-    constructor() {
-        this._path = "44'/60'/0'/0";
+
+    constructor(path) {
+        path = path || allowed_hd_paths[0];
+        if (!allowed_hd_paths.some(hd_pref => path.startsWith(hd_pref)))
+            throw new Error(`hd derivation path for Nano Ledger S may only start [${allowed_hd_paths}], ${path} was provided`);
+        this._path = path;
         this._accounts = null;
         this.isU2FSupported = null;
         this.getAppConfig = this.getAppConfig.bind(this);
