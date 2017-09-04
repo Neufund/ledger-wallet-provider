@@ -41,12 +41,12 @@ const allowed_hd_paths = ["44'/60'", "44'/61'"];
 
 class LedgerWallet {
 
-    constructor(path, web3instance) {
+    constructor(path, web3instance = web3) {
         path = path || allowed_hd_paths[0];
         if (!allowed_hd_paths.some(hd_pref => path.startsWith(hd_pref)))
             throw new Error(`hd derivation path for Nano Ledger S may only start [${allowed_hd_paths}], ${path} was provided`);
         this._path = path;
-        this._web3 = web3instance || web3;
+        this._web3 = web3instance;
         this._accounts = null;
         this.isU2FSupported = null;
         this.getAppConfig = this.getAppConfig.bind(this);
