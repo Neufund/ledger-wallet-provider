@@ -42,7 +42,7 @@ const allowed_hd_paths = ["44'/60'", "44'/61'"];
 class LedgerWallet {
 
     constructor(path, askForOnDeviceConfirmation = false) {
-        path = path || allowed_hd_paths[0];
+        path = path || "44'/60'/0'/0";
         if (!allowed_hd_paths.some(hd_pref => path.startsWith(hd_pref)))
             throw new Error(`hd derivation path for Nano Ledger S may only start [${allowed_hd_paths}], ${path} was provided`);
         this._path = path;
