@@ -1,6 +1,6 @@
 {
   "name": "ledger-wallet-provider",
-  "version": "1.15.4",
+  "version": "2.0.0",
   "description": "Ledger Nano S wallet provider for the Web3 ProviderEngine",
   "main": "lib/index.js",
   "scripts": {
