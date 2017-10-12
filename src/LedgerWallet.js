@@ -41,11 +41,12 @@ const allowed_hd_paths = ["44'/60'", "44'/61'"];
 
 class LedgerWallet {
 
-    constructor(path) {
+    constructor(path, askForOnDeviceConfirmation = false) {
         path = path || allowed_hd_paths[0];
         if (!allowed_hd_paths.some(hd_pref => path.startsWith(hd_pref)))
             throw new Error(`hd derivation path for Nano Ledger S may only start [${allowed_hd_paths}], ${path} was provided`);
         this._path = path;
+        this._askForOnDeviceConfirmation = askForOnDeviceConfirmation;
         this._accounts = null;
         this.isU2FSupported = null;
         this.getAppConfig = this.getAppConfig.bind(this);
@@ -127,9 +128,8 @@ class LedgerWallet {
     /**
      * Gets a list of accounts from a device
      * @param {failableCallback} callback
-     * @param askForOnDeviceConfirmation
      */
-    async getAccounts(callback, askForOnDeviceConfirmation = true) {
+    async getAccounts(callback) {
         if (!this.isU2FSupported) {
             callback(new Error(NOT_SUPPORTED_ERROR_MSG));
             return;
@@ -144,7 +144,7 @@ class LedgerWallet {
             this._closeLedgerConnection(eth);
             callback(error, data);
         };
-        eth.getAddress_async(this._path, askForOnDeviceConfirmation, chainCode)
+        eth.getAddress_async(this._path, this._askForOnDeviceConfirmation, chainCode)
             .then(function (result) {
                 this._accounts = [result.address.toLowerCase()];
                 cleanupCallback(null, this._accounts);
