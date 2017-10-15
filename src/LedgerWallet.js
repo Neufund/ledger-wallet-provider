@@ -41,12 +41,13 @@ const allowed_hd_paths = ["44'/60'", "44'/61'"];
 
 class LedgerWallet {
 
-    constructor(path, askForOnDeviceConfirmation = false) {
+    constructor(getNetworkId, path, askForOnDeviceConfirmation = false) {
         path = path || "44'/60'/0'/0";
         if (!allowed_hd_paths.some(hd_pref => path.startsWith(hd_pref)))
             throw new Error(`hd derivation path for Nano Ledger S may only start [${allowed_hd_paths}], ${path} was provided`);
         this._path = path;
         this._askForOnDeviceConfirmation = askForOnDeviceConfirmation;
+        this._getNetworkId = getNetworkId;
         this._accounts = null;
         this.isU2FSupported = null;
         this.getAppConfig = this.getAppConfig.bind(this);
@@ -163,48 +164,42 @@ class LedgerWallet {
             return;
         }
         // Encode using ethereumjs-tx
-        let tx = new EthereumTx(txData);
+        const tx = new EthereumTx(txData);
+        const chain_id = parseInt(await this._getNetworkId());
 
-        // Fetch the chain id
-        web3.version.getNetwork(async function (error, chain_id) {
-            if (error) callback(error);
+        // Set the EIP155 bits
+        tx.raw[6] = Buffer.from([chain_id]); // v
+        tx.raw[7] = Buffer.from([]);         // r
+        tx.raw[8] = Buffer.from([]);         // s
 
-            // Force chain_id to int
-            chain_id = 0 | chain_id;
+        // Encode as hex-rlp for Ledger
+        const hex = tx.serialize().toString("hex");
 
-            // Set the EIP155 bits
-            tx.raw[6] = Buffer.from([chain_id]); // v
-            tx.raw[7] = Buffer.from([]);         // r
-            tx.raw[8] = Buffer.from([]);         // s
+        let eth = await this._getLedgerConnection();
+        let cleanupCallback = (error, data) => {
+            this._closeLedgerConnection(eth);
+            callback(error, data);
+        };
+        // Pass to _ledger for signing
+        eth.signTransaction_async(this._path, hex)
+            .then(result => {
+                // Store signature in transaction
+                tx.v = new Buffer(result.v, "hex");
+                tx.r = new Buffer(result.r, "hex");
+                tx.s = new Buffer(result.s, "hex");
 
-            // Encode as hex-rlp for Ledger
-            const hex = tx.serialize().toString("hex");
+                // EIP155: v should be chain_id * 2 + {35, 36}
+                const signed_chain_id = Math.floor((tx.v[0] - 35) / 2);
+                if (signed_chain_id !== chain_id) {
+                    cleanupCallback("Invalid signature received. Please update your Ledger Nano S.");
+                }
 
-            let eth = await this._getLedgerConnection();
-            let cleanupCallback = (error, data) => {
-                this._closeLedgerConnection(eth);
-                callback(error, data);
-            };
-            // Pass to _ledger for signing
-            eth.signTransaction_async(this._path, hex)
-                .then(result => {
-                    // Store signature in transaction
-                    tx.v = new Buffer(result.v, "hex");
-                    tx.r = new Buffer(result.r, "hex");
-                    tx.s = new Buffer(result.s, "hex");
+                // Return the signed raw transaction
+                const rawTx = "0x" + tx.serialize().toString("hex");
+                cleanupCallback(undefined, rawTx);
+            })
+            .catch(error => cleanupCallback(error))
 
-                    // EIP155: v should be chain_id * 2 + {35, 36}
-                    const signed_chain_id = Math.floor((tx.v[0] - 35) / 2);
-                    if (signed_chain_id !== chain_id) {
-                        cleanupCallback("Invalid signature received. Please update your Ledger Nano S.");
-                    }
-
-                    // Return the signed raw transaction
-                    const rawTx = "0x" + tx.serialize().toString("hex");
-                    cleanupCallback(undefined, rawTx);
-                })
-                .catch(error => cleanupCallback(error))
-        }.bind(this))
     }
 }
 
