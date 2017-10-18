@@ -42,19 +42,17 @@ const allowed_hd_paths = ["44'/60'", "44'/61'"];
 class LedgerWallet {
 
     constructor(getNetworkId, path, askForOnDeviceConfirmation = false) {
-        path = path || "44'/60'/0'/0";
-        if (!allowed_hd_paths.some(hd_pref => path.startsWith(hd_pref)))
-            throw new Error(`hd derivation path for Nano Ledger S may only start [${allowed_hd_paths}], ${path} was provided`);
-        this._path = path;
         this._askForOnDeviceConfirmation = askForOnDeviceConfirmation;
         this._getNetworkId = getNetworkId;
-        this._accounts = null;
+        this._accounts = null;  // we store just one account that correspond to current derivation path. It's set after first getAccounts call
         this.isU2FSupported = null;
+        this.connectionOpened = false;
         this.getAppConfig = this.getAppConfig.bind(this);
         this.getAccounts = this.getAccounts.bind(this);
         this.signTransaction = this.signTransaction.bind(this);
         this._getLedgerConnection = this._getLedgerConnection.bind(this);
-        this.connectionOpened = false;
+        this.setDerivationPath = this.setDerivationPath.bind(this);
+        this.setDerivationPath(path);
     }
 
     async init() {
@@ -96,6 +94,13 @@ class LedgerWallet {
     async _closeLedgerConnection(eth) {
         this.connectionOpened = false;
         await eth.comm.close_async();
+    }
+
+    setDerivationPath(path) {
+        const newPath = path || "44'/60'/0'/0";
+        if (!allowed_hd_paths.some(hd_pref => newPath.startsWith(hd_pref)))
+            throw new Error(`hd derivation path for Nano Ledger S may only start [${allowed_hd_paths}], ${newPath} was provided`);
+        this._path = newPath;
     }
 
     /**
