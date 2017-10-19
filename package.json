@@ -32,6 +32,6 @@
     "ledgerco": "Neufund/ledger-node-js-api",
     "promise-timeout": "^1.1.1",
     "u2f-api": "^0.0.9",
-    "web3-provider-engine": "^11.0.0"
+    "web3-provider-engine": "^13.3.2"
   }
 }
