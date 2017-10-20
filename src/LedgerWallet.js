@@ -39,7 +39,7 @@ const NOT_SUPPORTED_ERROR_MSG =
 const allowed_hd_paths = ["44'/60'", "44'/61'"];
 
 export class LedgerWallet {
-  constructor(path) {
+  constructor(web3, path) {
     path = path || allowed_hd_paths[0];
     if (!allowed_hd_paths.some(hd_pref => path.startsWith(hd_pref)))
       throw new Error(
@@ -53,7 +53,7 @@ export class LedgerWallet {
     this.signTransaction = this.signTransaction.bind(this);
     this._getLedgerConnection = this._getLedgerConnection.bind(this);
     this.connectionOpened = false;
-    this.web3 = null;
+    this.web3 = web3;
   }
 
   async init() {

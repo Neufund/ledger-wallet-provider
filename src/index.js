@@ -1,8 +1,8 @@
 import HookedWalletSubprovider from "web3-provider-engine/subproviders/hooked-wallet";
 import LedgerWallet from "./LedgerWallet";
 
-export default function(path_override) {
-  const ledger = new LedgerWallet(path_override);
+export default function(web3, path_override) {
+  const ledger = new LedgerWallet(web3, path_override);
   const LedgerWalletSubprovider = new HookedWalletSubprovider(ledger);
 
   // This convenience method lets you handle the case where your users browser doesn't support U2F
