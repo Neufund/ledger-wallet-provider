@@ -3,7 +3,6 @@ import EthereumTx from "ethereumjs-tx";
 import u2f from "./u2f-api";
 import { timeout } from "promise-timeout";
 
-// if (!typeof window && window.u2f === undefined) window.u2f = u2f;
 const NOT_SUPPORTED_ERROR_MSG =
   "LedgerWallet uses U2F which is not supported by your browser. " +
   "Use Chrome, Opera or Firefox with a U2F extension." +
@@ -57,13 +56,8 @@ export class LedgerWallet {
     this.web3 = null;
   }
 
-  setWeb3(web3) {
-    this.web3 = web3;
-  }
-
   async init() {
-    // this.isU2FSupported = await LedgerWallet.isSupported();
-    return true;
+    this.isU2FSupported = await LedgerWallet.isSupported();
   }
 
   /**
@@ -72,21 +66,21 @@ export class LedgerWallet {
      * so we call getApiVersion and wait for 100ms
      */
   static async isSupported() {
-    // return new Promise((resolve, reject) => {
-    //   if (u2f && !u2f.getApiVersion) {
-    //     // u2f object is found (Firefox with extension)
-    //     resolve(true);
-    //   } else {
-    //     // u2f object was not found. Using Google polyfill
-    //     const intervalId = setTimeout(() => {
-    //       resolve(false);
-    //     }, 3000);
-    //     u2f.getApiVersion(version => {
-    //       clearTimeout(intervalId);
-    //       resolve(true);
-    //     });
-    //   }
-    // });
+    return new Promise((resolve, reject) => {
+      if (u2f && !u2f.getApiVersion) {
+        // u2f object is found (Firefox with extension)
+        resolve(true);
+      } else {
+        // u2f object was not found. Using Google polyfill
+        const intervalId = setTimeout(() => {
+          resolve(false);
+        }, 3000);
+        u2f.getApiVersion(version => {
+          clearTimeout(intervalId);
+          resolve(true);
+        });
+      }
+    });
     return true;
   }
 
@@ -96,6 +90,7 @@ export class LedgerWallet {
         "You can only have one ledger connection active at a time"
       );
     } else {
+      // Nano throws and console hangs
       this.connectionOpened = true;
       return new ledger.eth(await ledger.comm_node.create_async());
     }
@@ -140,7 +135,6 @@ export class LedgerWallet {
      * @param askForOnDeviceConfirmation
      */
   async getAccounts(callback, askForOnDeviceConfirmation = true) {
-    console.log("accounts");
     if (!this.isU2FSupported) {
       callback(new Error(NOT_SUPPORTED_ERROR_MSG));
       return;
@@ -165,62 +159,55 @@ export class LedgerWallet {
   }
 
   async signTransaction(txData, callback) {
-    console.log("sign transaction");
     if (!this.isU2FSupported) {
       callback(new Error(NOT_SUPPORTED_ERROR_MSG));
       return;
     }
-    try {
-      // Encode using ethereumjs-tx
-      const tx = new EthereumTx(txData);
+    // Encode using ethereumjs-tx
+    const tx = new EthereumTx(txData);
 
-      // Fetch the chain id
-      this.web3.version.getNetwork(async (error, chain_id) => {
-        if (error) callback(error);
+    // Fetch the chain id
+    this.web3.version.getNetwork(async (error, chain_id) => {
+      if (error) callback(error);
 
-        // Force chain_id to int
-        chain_id = 0 | chain_id;
+      // Force chain_id to int
+      chain_id = 0 | chain_id;
 
-        // Set the EIP155 bits
-        tx.raw[6] = Buffer.from([chain_id]); // v
-        tx.raw[7] = Buffer.from([]); // r
-        tx.raw[8] = Buffer.from([]); // s
+      // Set the EIP155 bits
+      tx.raw[6] = Buffer.from([chain_id]); // v
+      tx.raw[7] = Buffer.from([]); // r
+      tx.raw[8] = Buffer.from([]); // s
 
-        // Encode as hex-rlp for Ledger
-        const hex = tx.serialize().toString("hex");
+      // Encode as hex-rlp for Ledger
+      const hex = tx.serialize().toString("hex");
+      const eth = await this._getLedgerConnection();
+      const cleanupCallback = (error, data) => {
+        this._closeLedgerConnection(eth);
+        callback(error, data);
+      };
+      // Pass to _ledger for signing
+      eth
+        .signTransaction_async(this._path, hex)
+        .then(result => {
+          // Store signature in transaction
+          tx.v = new Buffer(result.v, "hex");
+          tx.r = new Buffer(result.r, "hex");
+          tx.s = new Buffer(result.s, "hex");
 
-        const eth = await this._getLedgerConnection();
-        const cleanupCallback = (error, data) => {
-          this._closeLedgerConnection(eth);
-          callback(error, data);
-        };
-        // Pass to _ledger for signing
-        eth
-          .signTransaction_async(this._path, hex)
-          .then(result => {
-            console.log(result);
-            // Store signature in transaction
-            tx.v = new Buffer(result.v, "hex");
-            tx.r = new Buffer(result.r, "hex");
-            tx.s = new Buffer(result.s, "hex");
+          // EIP155: v should be chain_id * 2 + {35, 36}
+          const signed_chain_id = Math.floor((tx.v[0] - 35) / 2);
+          if (signed_chain_id !== chain_id) {
+            throw new Error(
+              "Invalid signature received. Please update your Ledger Nano S."
+            );
+          }
 
-            // EIP155: v should be chain_id * 2 + {35, 36}
-            const signed_chain_id = Math.floor((tx.v[0] - 35) / 2);
-            if (signed_chain_id !== chain_id) {
-              cleanupCallback(
-                "Invalid signature received. Please update your Ledger Nano S."
-              );
-            }
-
-            // Return the signed raw transaction
-            const rawTx = `0x${tx.serialize().toString("hex")}`;
-            cleanupCallback(undefined, rawTx);
-          })
-          .catch(error => cleanupCallback(error));
-      });
-    } catch (e) {
-      console.log(e);
-    }
+          // Return the signed raw transaction
+          const rawTx = `0x${tx.serialize().toString("hex")}`;
+          cleanupCallback(undefined, rawTx);
+        })
+        .catch(error => cleanupCallback(error));
+    });
   }
 }
 
