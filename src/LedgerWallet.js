@@ -132,7 +132,7 @@ class LedgerWallet {
     }
 
     /**
-     * Gets a list of accounts from a device
+     * Gets a list of accounts from a device - currently it's returning just first one according to derivation path
      * @param {failableCallback} callback
      */
     async getAccounts(callback) {
@@ -156,6 +156,27 @@ class LedgerWallet {
                 cleanupCallback(null, this._accounts);
             }.bind(this))
             .catch(error => cleanupCallback(error));
+    }
+
+    async getMultipleAccounts(derivation_path, starting_index, accounts_no, callback) {
+        if (!this.isU2FSupported) {
+            callback(new Error(NOT_SUPPORTED_ERROR_MSG));
+            return;
+        }
+        const chainCode = false; // Include the chain code
+        let eth = await this._getLedgerConnection();
+        let cleanupCallback = (error, data) => {
+            this._closeLedgerConnection(eth);
+            callback(error, data);
+        };
+        const addresses = [];
+        for(let i = starting_index; i < starting_index + accounts_no; i++) {
+
+            const path = `${derivation_path}${starting_index + i}`;
+            const address = await eth.getAddress_async(path, this._askForOnDeviceConfirmation, chainCode);
+            addresses.push(address.address);
+        }
+        cleanupCallback(null, addresses);
     }
 
     /**
