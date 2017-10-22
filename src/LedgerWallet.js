@@ -49,6 +49,7 @@ class LedgerWallet {
         this.connectionOpened = false;
         this.getAppConfig = this.getAppConfig.bind(this);
         this.getAccounts = this.getAccounts.bind(this);
+        this.getMultipleAccounts = this.getMultipleAccounts.bind(this);
         this.signTransaction = this.signTransaction.bind(this);
         this._getLedgerConnection = this._getLedgerConnection.bind(this);
         this.setDerivationPath = this.setDerivationPath.bind(this);
@@ -169,12 +170,12 @@ class LedgerWallet {
             this._closeLedgerConnection(eth);
             callback(error, data);
         };
-        const addresses = [];
+        const addresses = {};
         for(let i = starting_index; i < starting_index + accounts_no; i++) {
 
             const path = `${derivation_path}${starting_index + i}`;
             const address = await eth.getAddress_async(path, this._askForOnDeviceConfirmation, chainCode);
-            addresses.push(address.address);
+            addresses[path] = address.address;
         }
         cleanupCallback(null, addresses);
     }
