@@ -172,8 +172,7 @@ class LedgerWallet {
         };
         const addresses = {};
         for(let i = starting_index; i < starting_index + accounts_no; i++) {
-
-            const path = `${derivation_path}${starting_index + i}`;
+            const path = `${derivation_path}${i}`;
             const address = await eth.getAddress_async(path, this._askForOnDeviceConfirmation, chainCode);
             addresses[path] = address.address;
         }
