@@ -119,7 +119,7 @@ class LedgerWallet {
      */
     async getAppConfig(callback, ttl) {
         if (!this.isU2FSupported) {
-            callback(new Error(NOT_SUPPORTED_ERROR_MSG));
+            callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
             return;
         }
         let eth = await this._getLedgerConnection();
@@ -138,7 +138,7 @@ class LedgerWallet {
      */
     async getAccounts(callback) {
         if (!this.isU2FSupported) {
-            callback(new Error(NOT_SUPPORTED_ERROR_MSG));
+            callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
             return;
         }
         if (this._accounts !== null) {
@@ -161,7 +161,7 @@ class LedgerWallet {
 
     async getMultipleAccounts(derivation_path, starting_index, accounts_no, callback) {
         if (!this.isU2FSupported) {
-            callback(new Error(NOT_SUPPORTED_ERROR_MSG));
+            callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
             return;
         }
         const chainCode = false; // Include the chain code
@@ -186,7 +186,7 @@ class LedgerWallet {
      */
     async signTransaction(txData, callback) {
         if (!this.isU2FSupported) {
-            callback(new Error(NOT_SUPPORTED_ERROR_MSG));
+            callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
             return;
         }
         // Encode using ethereumjs-tx
@@ -218,6 +218,7 @@ class LedgerWallet {
                 const signed_chain_id = Math.floor((tx.v[0] - 35) / 2);
                 if (signed_chain_id !== chain_id) {
                     cleanupCallback("Invalid signature received. Please update your Ledger Nano S.");
+                    return;
                 }
 
                 // Return the signed raw transaction
