@@ -102,6 +102,7 @@ class LedgerWallet {
         if (!allowed_hd_paths.some(hd_pref => newPath.startsWith(hd_pref)))
             throw new Error(`hd derivation path for Nano Ledger S may only start [${allowed_hd_paths}], ${newPath} was provided`);
         this._path = newPath;
+        this._accounts = null;
     }
 
     /**
