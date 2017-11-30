@@ -1,8 +1,13 @@
-import ledger from 'ledgerco/src/index-browserify';
+import ledger from 'ledgerco/src/index';
 import EthereumTx from 'ethereumjs-tx';
 import u2f from './u2f-api';
 import {timeout} from 'promise-timeout';
-if (window.u2f === undefined) window.u2f = u2f;
+
+const isNode = (typeof window === 'undefined');
+
+if (!isNode && window.u2f === undefined) {
+    window.u2f = u2f;
+}
 
 const NOT_SUPPORTED_ERROR_MSG =
     "LedgerWallet uses U2F which is not supported by your browser. " +
@@ -66,21 +71,25 @@ class LedgerWallet {
      * so we call getApiVersion and wait for 100ms
      */
     static async isSupported() {
-        return new Promise((resolve, reject) => {
-            if (window.u2f && !window.u2f.getApiVersion) {
-                // u2f object is found (Firefox with extension)
-                resolve(true);
-            } else {
-                // u2f object was not found. Using Google polyfill
-                const intervalId = setTimeout(() => {
-                    resolve(false);
-                }, 3000);
-                u2f.getApiVersion((version) => {
-                    clearTimeout(intervalId);
+        if (isNode) {
+            return true;
+        } else {
+            return new Promise((resolve, reject) => {
+                if (window.u2f && !window.u2f.getApiVersion) {
+                    // u2f object is found (Firefox with extension)
                     resolve(true);
-                });
-            }
-        });
+                } else {
+                    // u2f object was not found. Using Google polyfill
+                    const intervalId = setTimeout(() => {
+                        resolve(false);
+                    }, 3000);
+                    u2f.getApiVersion((version) => {
+                        clearTimeout(intervalId);
+                        resolve(true);
+                    });
+                }
+            });
+        }
     };
 
     async _getLedgerConnection() {
@@ -88,7 +97,7 @@ class LedgerWallet {
             throw new Error("You can only have one ledger connection active at a time");
         } else {
             this.connectionOpened = true;
-            return new ledger.eth(await ledger.comm_u2f.create_async());
+            return new ledger.eth(isNode ? await ledger.comm_node.create_async() : await ledger.comm_u2f.create_async());
         }
     }
 
