@@ -42,4 +42,7 @@ async function main () {
   console.log(web3.fromWei(await web3.eth.getBalanceAsync(config.dp1Acc1), "ether").toString());
 }
 
-main().catch(err => console.log(err));
+main().catch(err => {
+  console.log(err);
+  process.exit(1);
+});

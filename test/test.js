@@ -83,4 +83,9 @@ async function main () {
   engine.stop();
 }
 
-main().catch((err) => console.log(err));
+main().catch((err) => {
+  console.log(err);
+  if (isNode) {
+    process.exit(1);
+  }
+});
