@@ -1,5 +1,4 @@
 const Web3 = require('web3');
-const BigNumber = require('bignumber.js');
 const ProviderEngine = require('web3-provider-engine');
 const FetchSubprovider = require('web3-provider-engine/subproviders/fetch');
 const HookedWalletSubprovider  = require('web3-provider-engine/subproviders/hooked-wallet');

@@ -1,4 +1,4 @@
-import HookedWalletSubprovider from "web3-provider-engine/subproviders/hooked-wallet.js";
+import HookedWalletSubprovider from "web3-provider-engine/subproviders/hooked-wallet";
 import LedgerWallet from "./LedgerWallet";
 
 export default async function (getNetworkId, path_override, askForOnDeviceConfirmation) {
