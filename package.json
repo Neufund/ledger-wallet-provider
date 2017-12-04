@@ -4,6 +4,10 @@
   "description": "Ledger Nano S wallet provider for the Web3 ProviderEngine",
   "main": "lib/index.js",
   "scripts": {
+    "ganche": "./test/ganache-cli.sh",
+    "test-setup": "./node_modules/.bin/babel-node ./test/setup.js",
+    "test-node": "./node_modules/.bin/babel-node ./test/test.js",
+    "test-web": "webpack-dev-server --https --open",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "babel src --out-dir lib",
     "prepublish": "npm run build"
@@ -21,17 +25,16 @@
   "devDependencies": {
     "babel-cli": "^6.23.0",
     "babel-core": "^6.22.1",
+    "babel-loader": "^7.1.2",
     "babel-plugin-transform-class-properties": "^6.23.0",
     "babel-plugin-transform-regenerator": "^6.22.0",
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-es2015": "^6.22.0",
     "babel-preset-es2017": "^6.22.0",
-    "bignumber.js": "^5.0.0",
     "bluebird": "^3.5.1",
-    "browserify": "^14.5.0",
     "ganache-cli": "^6.0.3",
-    "https-proxy-cli": "^1.1.0",
-    "web3": "^0.20.0"
+    "web3": "^0.20.0",
+    "webpack-dev-server": "^2.9.5"
   },
   "dependencies": {
     "babel-runtime": "^6.23.0",
