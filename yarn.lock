@@ -4255,9 +4255,9 @@ wbuf@^1.1.0, wbuf@^1.7.2:
   dependencies:
     minimalistic-assert "^1.0.0"
 
-web3-provider-engine@Neufund/provider-engine:
+web3-provider-engine@^13.3.3:
   version "13.3.3"
-  resolved "https://codeload.github.com/Neufund/provider-engine/tar.gz/5f8d95254deeaaddd15617b6dcb60884427f5037"
+  resolved "https://registry.yarnpkg.com/web3-provider-engine/-/web3-provider-engine-13.3.3.tgz#1f6df4ec540161125f3e5f501bb0e56af83a01df"
   dependencies:
     async "^2.5.0"
     clone "^2.0.0"

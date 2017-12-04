@@ -1,7 +1,7 @@
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const ProviderEngine = require('web3-provider-engine');
-const RpcSubprovider = require('web3-provider-engine/subproviders/rpc');
+const FetchSubprovider = require('web3-provider-engine/subproviders/fetch');
 const HookedWalletSubprovider  = require('web3-provider-engine/subproviders/hooked-wallet');
 const promisify = require('bluebird').promisify;
 
@@ -28,8 +28,7 @@ async function main () {
   ledger.getMultipleAccountsAsync = promisify(ledger.getMultipleAccounts);
   await ledger.init();
   engine.addProvider(new HookedWalletSubprovider(ledger));
-  engine.addProvider(
-      new RpcSubprovider({rpcUrl: rpcUrl}));
+  engine.addProvider(new FetchSubprovider({rpcUrl: rpcUrl}));
 
   engine.start();
 
