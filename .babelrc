@@ -1,7 +1,11 @@
 {
   "presets": [
     ["env", {
-      "include": ["transform-regenerator"]
+      "include": ["transform-regenerator"],
+      "targets": {
+        "browsers": ["last 2 versions"],
+        "node": "6.12"
+      }
     }]
   ],
   "plugins": ["transform-runtime"]
