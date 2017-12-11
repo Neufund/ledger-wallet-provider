@@ -4,13 +4,14 @@
   "description": "Ledger Nano S wallet provider for the Web3 ProviderEngine",
   "main": "lib/index.js",
   "scripts": {
-    "ganche": "./test/ganache-cli.sh",
+    "ganache": "./test/ganache-cli.sh",
     "test-setup": "./node_modules/.bin/babel-node ./test/setup.js",
     "test-node": "./node_modules/.bin/babel-node ./test/test.js",
     "test-web": "webpack-dev-server --https --open",
+    "lint": "eslint .",
+    "lint-fix": "eslint --fix .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "babel src --out-dir lib",
-    "prepublish": "npm run build"
+    "build": "babel src --out-dir lib"
   },
   "repository": {
     "type": "git",
@@ -23,24 +24,24 @@
   },
   "homepage": "https://github.com/Neufund/ledger-wallet-provider#readme",
   "devDependencies": {
-    "babel-cli": "^6.23.0",
-    "babel-core": "^6.22.1",
+    "babel-cli": "^6.26.0",
     "babel-loader": "^7.1.2",
-    "babel-plugin-transform-class-properties": "^6.23.0",
-    "babel-plugin-transform-regenerator": "^6.22.0",
     "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-preset-es2015": "^6.22.0",
-    "babel-preset-es2017": "^6.22.0",
+    "babel-preset-env": "^1.6.1",
     "bluebird": "^3.5.1",
+    "eslint": "^4.12.1",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.8.0",
     "ganache-cli": "^6.0.3",
     "web3": "^0.20.0",
     "webpack-dev-server": "^2.9.5"
   },
   "dependencies": {
     "babel-runtime": "^6.23.0",
+    "ethereumjs-tx": "^1.3.3",
     "ledgerco": "Neufund/ledger-node-js-api",
     "promise-timeout": "^1.1.1",
     "u2f-api": "^0.0.9",
-    "web3-provider-engine": "Neufund/provider-engine"
+    "web3-provider-engine": "^13.3.3"
   }
 }
