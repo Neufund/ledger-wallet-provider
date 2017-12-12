@@ -84,7 +84,7 @@ Run `yarn` command.
 ### Prepare `config.js`
 Copy `config.js.example` to `config.js` and edit it setting up your Nano's public keys. You can obtain them using [myetherwallet](https://www.myetherwallet.com/).
 ### Run ganche-cli (former testrpc)
-Run `yarn ganche` command.
+Run `yarn ganache` command.
 ### Transfer test ether to Nano accounts that will be used in tests
 Run `yarn test-setup` command.
 ### Run tests using node
