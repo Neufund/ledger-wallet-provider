@@ -201,6 +201,7 @@ class LedgerWallet {
     const addresses = {};
     for (let i = startingIndex; i < startingIndex + accountsNo; i += 1) {
       const path = `${derivationPath}${i}`;
+      // eslint-disable-next-line no-await-in-loop
       const address = await eth.getAddress_async(
         path,
         this.askForOnDeviceConfirmation,
@@ -243,9 +244,11 @@ class LedgerWallet {
       .signTransaction_async(this.path, hex)
       .then(result => {
         // Store signature in transaction
+        /* eslint-disable no-buffer-constructor */
         tx.v = new Buffer(result.v, "hex");
         tx.r = new Buffer(result.r, "hex");
         tx.s = new Buffer(result.s, "hex");
+        /* eslint-enable no-buffer-constructor */
 
         // EIP155: v should be chain_id * 2 + {35, 36}
         const signedChainId = Math.floor((tx.v[0] - 35) / 2);
