@@ -1,8 +1,16 @@
-import HookedWalletSubprovider from 'web3-provider-engine/subproviders/hooked-wallet';
-import LedgerWallet from './LedgerWallet';
+import HookedWalletSubprovider from "web3-provider-engine/subproviders/hooked-wallet";
+import LedgerWallet from "./LedgerWallet";
 
-export default async function (getNetworkId, pathOverride, askForOnDeviceConfirmation) {
-  const ledger = new LedgerWallet(getNetworkId, pathOverride, askForOnDeviceConfirmation);
+export default async function(
+  getNetworkId,
+  pathOverride,
+  askForOnDeviceConfirmation
+) {
+  const ledger = new LedgerWallet(
+    getNetworkId,
+    pathOverride,
+    askForOnDeviceConfirmation
+  );
   await ledger.init();
   const LedgerWalletSubprovider = new HookedWalletSubprovider(ledger);
 

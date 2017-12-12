@@ -1,19 +1,19 @@
-import ledger from 'ledgerco/src/index';
-import EthereumTx from 'ethereumjs-tx';
-import { timeout } from 'promise-timeout';
+import ledger from "ledgerco/src/index";
+import EthereumTx from "ethereumjs-tx";
+import { timeout } from "promise-timeout";
 
-import u2f from './u2f-api';
+import u2f from "./u2f-api";
 
-const isNode = (typeof window === 'undefined');
+const isNode = typeof window === "undefined";
 
 if (!isNode && window.u2f === undefined) {
   window.u2f = u2f;
 }
 
 const NOT_SUPPORTED_ERROR_MSG =
-    'LedgerWallet uses U2F which is not supported by your browser. ' +
-    'Use Chrome, Opera or Firefox with a U2F extension.' +
-    "Also make sure you're on an HTTPS connection";
+  "LedgerWallet uses U2F which is not supported by your browser. " +
+  "Use Chrome, Opera or Firefox with a U2F extension." +
+  "Also make sure you're on an HTTPS connection";
 /**
  *  @class LedgerWallet
  *
@@ -43,20 +43,22 @@ const NOT_SUPPORTED_ERROR_MSG =
  *  https://github.com/MetaMask/metamask-plugin/blob/master/app/scripts/keyrings/hd.js
  *
  */
-const allowed_hd_paths = ["44'/60'", "44'/61'"];
+const allowedHdPaths = ["44'/60'", "44'/61'"];
 
 class LedgerWallet {
   constructor(getNetworkId, path, askForOnDeviceConfirmation = false) {
-    this._askForOnDeviceConfirmation = askForOnDeviceConfirmation;
-    this._getNetworkId = getNetworkId;
-    this._accounts = null; // we store just one account that correspond to current derivation path. It's set after first getAccounts call
+    this.askForOnDeviceConfirmation = askForOnDeviceConfirmation;
+    this.getNetworkId = getNetworkId;
+    // we store just one account that correspond to current derivation path.
+    // It's set after first getAccounts call
+    this.accounts = null;
     this.isU2FSupported = null;
     this.connectionOpened = false;
     this.getAppConfig = this.getAppConfig.bind(this);
     this.getAccounts = this.getAccounts.bind(this);
     this.getMultipleAccounts = this.getMultipleAccounts.bind(this);
     this.signTransaction = this.signTransaction.bind(this);
-    this._getLedgerConnection = this._getLedgerConnection.bind(this);
+    this.getLedgerConnection = this.getLedgerConnection.bind(this);
     this.setDerivationPath = this.setDerivationPath.bind(this);
     this.setDerivationPath(path);
   }
@@ -66,15 +68,15 @@ class LedgerWallet {
   }
 
   /**
-     * Checks if the browser supports u2f.
-     * Currently there is no good way to do feature-detection,
-     * so we call getApiVersion and wait for 100ms
-     */
+   * Checks if the browser supports u2f.
+   * Currently there is no good way to do feature-detection,
+   * so we call getApiVersion and wait for 100ms
+   */
   static async isSupported() {
     if (isNode) {
       return true;
     }
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       if (window.u2f && !window.u2f.getApiVersion) {
         // u2f object is found (Firefox with extension)
         resolve(true);
@@ -83,7 +85,7 @@ class LedgerWallet {
         const intervalId = setTimeout(() => {
           resolve(false);
         }, 3000);
-        u2f.getApiVersion((version) => {
+        u2f.getApiVersion(() => {
           clearTimeout(intervalId);
           resolve(true);
         });
@@ -91,25 +93,36 @@ class LedgerWallet {
     });
   }
 
-  async _getLedgerConnection() {
+  async getLedgerConnection() {
     if (this.connectionOpened) {
-      throw new Error('You can only have one ledger connection active at a time');
+      throw new Error(
+        "You can only have one ledger connection active at a time"
+      );
     } else {
       this.connectionOpened = true;
-      return new ledger.eth(isNode ? await ledger.comm_node.create_async() : await ledger.comm_u2f.create_async());
+      // eslint-disable-next-line new-cap
+      return new ledger.eth(
+        isNode
+          ? await ledger.comm_node.create_async()
+          : await ledger.comm_u2f.create_async()
+      );
     }
   }
 
-  async _closeLedgerConnection(eth) {
+  async closeLedgerConnection(eth) {
     this.connectionOpened = false;
     await eth.comm.close_async();
   }
 
   setDerivationPath(path) {
     const newPath = path || "44'/60'/0'/0";
-    if (!allowed_hd_paths.some(hd_pref => newPath.startsWith(hd_pref))) { throw new Error(`hd derivation path for Nano Ledger S may only start [${allowed_hd_paths}], ${newPath} was provided`); }
-    this._path = newPath;
-    this._accounts = null;
+    if (!allowedHdPaths.some(hdPref => newPath.startsWith(hdPref))) {
+      throw new Error(
+        `hd derivation path for Nano Ledger S may only start [${allowedHdPaths}], ${newPath} was provided`
+      );
+    }
+    this.path = newPath;
+    this.accounts = null;
   }
 
   /**
@@ -119,20 +132,20 @@ class LedgerWallet {
      */
 
   /**
-     * Gets the version of installed ethereum app
-     * Check the isSupported() before calling that function
-     * otherwise it never returns
-     * @param {failableCallback} callback
-     * @param ttl - timeout
-     */
+   * Gets the version of installed ethereum app
+   * Check the isSupported() before calling that function
+   * otherwise it never returns
+   * @param {failableCallback} callback
+   * @param ttl - timeout
+   */
   async getAppConfig(callback, ttl) {
     if (!this.isU2FSupported) {
       callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
       return;
     }
-    const eth = await this._getLedgerConnection();
+    const eth = await this.getLedgerConnection();
     const cleanupCallback = (error, data) => {
-      this._closeLedgerConnection(eth);
+      this.closeLedgerConnection(eth);
       callback(error, data);
     };
     timeout(eth.getAppConfiguration_async(), ttl)
@@ -141,57 +154,68 @@ class LedgerWallet {
   }
 
   /**
-     * Gets a list of accounts from a device - currently it's returning just first one according to derivation path
-     * @param {failableCallback} callback
-     */
+   * Gets a list of accounts from a device - currently it's returning just
+   * first one according to derivation path
+   * @param {failableCallback} callback
+   */
   async getAccounts(callback) {
     if (!this.isU2FSupported) {
       callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
       return;
     }
-    if (this._accounts !== null) {
-      callback(null, this._accounts);
+    if (this.accounts !== null) {
+      callback(null, this.accounts);
       return;
     }
     const chainCode = false; // Include the chain code
-    const eth = await this._getLedgerConnection();
+    const eth = await this.getLedgerConnection();
     const cleanupCallback = (error, data) => {
-      this._closeLedgerConnection(eth);
+      this.closeLedgerConnection(eth);
       callback(error, data);
     };
-    eth.getAddress_async(this._path, this._askForOnDeviceConfirmation, chainCode)
-      .then((result) => {
-        this._accounts = [result.address.toLowerCase()];
-        cleanupCallback(null, this._accounts);
+    eth
+      .getAddress_async(this.path, this.askForOnDeviceConfirmation, chainCode)
+      .then(result => {
+        this.accounts = [result.address.toLowerCase()];
+        cleanupCallback(null, this.accounts);
       })
       .catch(error => cleanupCallback(error));
   }
 
-  async getMultipleAccounts(derivation_path, starting_index, accounts_no, callback) {
+  async getMultipleAccounts(
+    derivationPath,
+    startingIndex,
+    accountsNo,
+    callback
+  ) {
     if (!this.isU2FSupported) {
       callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
       return;
     }
     const chainCode = false; // Include the chain code
-    const eth = await this._getLedgerConnection();
+    const eth = await this.getLedgerConnection();
     const cleanupCallback = (error, data) => {
-      this._closeLedgerConnection(eth);
+      this.closeLedgerConnection(eth);
       callback(error, data);
     };
     const addresses = {};
-    for (let i = starting_index; i < starting_index + accounts_no; i++) {
-      const path = `${derivation_path}${i}`;
-      const address = await eth.getAddress_async(path, this._askForOnDeviceConfirmation, chainCode);
+    for (let i = startingIndex; i < startingIndex + accountsNo; i += 1) {
+      const path = `${derivationPath}${i}`;
+      const address = await eth.getAddress_async(
+        path,
+        this.askForOnDeviceConfirmation,
+        chainCode
+      );
       addresses[path] = address.address;
     }
     cleanupCallback(null, addresses);
   }
 
   /**
-     * Signs txData in a format that ethereumjs-tx accepts
-     * @param {object} txData - transaction to sign
-     * @param {failableCallback} callback - callback
-     */
+   * Signs txData in a format that ethereumjs-tx accepts
+   * @param {object} txData - transaction to sign
+   * @param {failableCallback} callback - callback
+   */
   async signTransaction(txData, callback) {
     if (!this.isU2FSupported) {
       callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
@@ -199,38 +223,41 @@ class LedgerWallet {
     }
     // Encode using ethereumjs-tx
     const tx = new EthereumTx(txData);
-    const chain_id = parseInt(await this._getNetworkId());
+    const chainId = parseInt(await this.getNetworkId(), 10);
 
     // Set the EIP155 bits
-    tx.raw[6] = Buffer.from([chain_id]); // v
+    tx.raw[6] = Buffer.from([chainId]); // v
     tx.raw[7] = Buffer.from([]); // r
     tx.raw[8] = Buffer.from([]); // s
 
     // Encode as hex-rlp for Ledger
-    const hex = tx.serialize().toString('hex');
+    const hex = tx.serialize().toString("hex");
 
-    const eth = await this._getLedgerConnection();
+    const eth = await this.getLedgerConnection();
     const cleanupCallback = (error, data) => {
-      this._closeLedgerConnection(eth);
+      this.closeLedgerConnection(eth);
       callback(error, data);
     };
     // Pass to _ledger for signing
-    eth.signTransaction_async(this._path, hex)
-      .then((result) => {
+    eth
+      .signTransaction_async(this.path, hex)
+      .then(result => {
         // Store signature in transaction
-        tx.v = new Buffer(result.v, 'hex');
-        tx.r = new Buffer(result.r, 'hex');
-        tx.s = new Buffer(result.s, 'hex');
+        tx.v = new Buffer(result.v, "hex");
+        tx.r = new Buffer(result.r, "hex");
+        tx.s = new Buffer(result.s, "hex");
 
         // EIP155: v should be chain_id * 2 + {35, 36}
-        const signed_chain_id = Math.floor((tx.v[0] - 35) / 2);
-        if (signed_chain_id !== chain_id) {
-          cleanupCallback('Invalid signature received. Please update your Ledger Nano S.');
+        const signedChainId = Math.floor((tx.v[0] - 35) / 2);
+        if (signedChainId !== chainId) {
+          cleanupCallback(
+            "Invalid signature received. Please update your Ledger Nano S."
+          );
           return;
         }
 
         // Return the signed raw transaction
-        const rawTx = `0x${tx.serialize().toString('hex')}`;
+        const rawTx = `0x${tx.serialize().toString("hex")}`;
         cleanupCallback(undefined, rawTx);
       })
       .catch(error => cleanupCallback(error));
