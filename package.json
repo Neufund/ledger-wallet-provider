@@ -31,8 +31,11 @@
     "bluebird": "^3.5.1",
     "eslint": "^4.12.1",
     "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-config-prettier": "^2.9.0",
     "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-prettier": "^2.3.1",
     "ganache-cli": "^6.0.3",
+    "prettier": "1.9.2",
     "web3": "^0.20.0",
     "webpack-dev-server": "^2.9.5"
   },
