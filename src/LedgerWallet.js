@@ -237,11 +237,9 @@ class LedgerWallet {
       const result = await eth.signTransaction_async(this.path, hex);
 
       // Store signature in transaction
-      /* eslint-disable no-buffer-constructor */
-      tx.v = new Buffer(result.v, "hex");
-      tx.r = new Buffer(result.r, "hex");
-      tx.s = new Buffer(result.s, "hex");
-      /* eslint-enable no-buffer-constructor */
+      tx.v = Buffer.from(result.v, "hex");
+      tx.r = Buffer.from(result.r, "hex");
+      tx.s = Buffer.from(result.s, "hex");
 
       // EIP155: v should be chain_id * 2 + {35, 36}
       const signedChainId = Math.floor((tx.v[0] - 35) / 2);
@@ -260,6 +258,10 @@ class LedgerWallet {
       return Promise.reject(e);
     } finally {
       if (eth !== null) {
+        // This is fishy but currently ledger library always returns empty
+        // resolved promise when closing connection so there is no point in
+        // doing anything with returned Promise.
+        // noinspection JSIgnoredPromiseFromCall
         this.closeLedgerConnection(eth);
       }
     }
