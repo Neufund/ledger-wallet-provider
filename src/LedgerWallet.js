@@ -24,24 +24,15 @@ const NOT_SUPPORTED_ERROR_MSG =
  *   * 44'/60'
  *   * 44'/61'
  *
- *  MyEtherWallet.com by default uses the range
+ *  MyEtherWallet.com by default uses the range which is not compatible with
+ *  BIP44/EIP84
  *
  *   * 44'/60'/0'/n
  *
- *  Note: no hardend derivation on the `n`
+ *  Note: no hardened derivation on the `n`
  *
- *  BIP44/EIP84 specificies:
- *
- *  * m / purpose' / coin_type' / account' / change / address_index
- *
- *  @see https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
- *  @see https://github.com/satoshilabs/slips/blob/master/slip-0044.md
  *  @see https://github.com/MetaMask/provider-engine
  *  @see https://github.com/ethereum/wiki/wiki/JavaScript-API
- *
- *  Implementations:
- *  https://github.com/MetaMask/metamask-plugin/blob/master/app/scripts/keyrings/hd.js
- *
  */
 const allowedHdPaths = ["44'/60'", "44'/61'"];
 
@@ -51,7 +42,6 @@ class LedgerWallet {
     this.getNetworkId = getNetworkId;
     // we store just one account that correspond to current derivation path.
     // It's set after first getAccounts call
-    this.accounts = null;
     this.isU2FSupported = null;
     this.connectionOpened = false;
     this.getAppConfig = this.getAppConfig.bind(this);
@@ -122,7 +112,6 @@ class LedgerWallet {
       );
     }
     this.path = newPath;
-    this.accounts = null;
   }
 
   /**
@@ -159,58 +148,74 @@ class LedgerWallet {
    * first one according to derivation path
    * @param {failableCallback} callback
    */
-  async getAccounts(callback) {
-    if (!this.isU2FSupported) {
-      callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
-      return;
-    }
-    if (this.accounts !== null) {
-      callback(null, this.accounts);
-      return;
-    }
-    const chainCode = false; // Include the chain code
-    const eth = await this.getLedgerConnection();
-    const cleanupCallback = (error, data) => {
-      this.closeLedgerConnection(eth);
-      callback(error, data);
-    };
-    eth
-      .getAddress_async(this.path, this.askForOnDeviceConfirmation, chainCode)
-      .then(result => {
-        this.accounts = [result.address.toLowerCase()];
-        cleanupCallback(null, this.accounts);
-      })
-      .catch(error => cleanupCallback(error));
+  getAccounts(callback) {
+    this.getMultipleAccounts(0, 1)
+      .then(res => callback(null, Object.values(res)))
+      .catch(err => callback(err, null));
   }
 
-  async getMultipleAccounts(
-    derivationPath,
-    startingIndex,
-    accountsNo,
-    callback
-  ) {
-    if (!this.isU2FSupported) {
-      callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
-      return;
-    }
-    const chainCode = false; // Include the chain code
-    const eth = await this.getLedgerConnection();
-    const cleanupCallback = (error, data) => {
-      this.closeLedgerConnection(eth);
-      callback(error, data);
-    };
-    const addresses = {};
-    for (let i = startingIndex; i < startingIndex + accountsNo; i += 1) {
-      const path = `${derivationPath}${i}`;
-      // eslint-disable-next-line no-await-in-loop
-      const address = await eth.getAddress_async(
-        path,
-        this.askForOnDeviceConfirmation,
-        chainCode
+  async getMultipleAccounts(indexOffset, accountsNo) {
+    let eth = null;
+    try {
+      if (!this.isU2FSupported) {
+        return Promise.reject(new Error(NOT_SUPPORTED_ERROR_MSG));
+      }
+      const pathComponents = LedgerWallet.obtainPathComponentsFromDerivationPath(
+        this.path
       );
-      addresses[path] = address.address;
+
+      const chainCode = false; // Include the chain code
+      eth = await this.getLedgerConnection();
+      const addresses = {};
+      for (let i = indexOffset; i < indexOffset + accountsNo; i += 1) {
+        const path =
+          pathComponents.basePath + (pathComponents.index + i).toString();
+        // eslint-disable-next-line no-await-in-loop
+        const address = await eth.getAddress_async(
+          path,
+          this.askForOnDeviceConfirmation,
+          chainCode
+        );
+        addresses[path] = address.address;
+      }
+      return Promise.resolve(addresses);
+    } catch (e) {
+      return Promise.reject(e);
+    } finally {
+      if (eth !== null) {
+        // This is fishy but currently ledger library always returns empty
+        // resolved promise when closing connection so there is no point in
+        // doing anything with returned Promise.
+        // noinspection JSIgnoredPromiseFromCall
+        this.closeLedgerConnection(eth);
+      }
     }
-    cleanupCallback(null, addresses);
+  }
+
+  /**
+   * PathComponent contains derivation path divided into base path and index.
+   * @typedef {Object} PathComponent
+   * @property {string} basePath - Base path of derivation path.
+   * @property {number} index - index of addresses.
+   */
+
+  /**
+   * Returns derivation path components: base path (ex 44'/60'/0'/) and index
+   * used by getMultipleAccounts.
+   * @param derivationPath
+   * @returns {PathComponent} PathComponent
+   */
+  static obtainPathComponentsFromDerivationPath(derivationPath) {
+    // check if derivation path follows 44'/60'/x'/n pattern
+    const regExp = /(44'\/6[0|1]'\/\d+'?\/)(\d+)'?/;
+    const matchResult = regExp.exec(derivationPath);
+    if (matchResult === null) {
+      throw new Error(
+        "To get multiple accounts your derivation path must follow pattern 44'/60|61'/x'/n "
+      );
+    }
+
+    return { basePath: matchResult[1], index: parseInt(matchResult[2], 10) };
   }
 
   async signTransactionAsync(txData) {
