@@ -72,11 +72,11 @@ class LedgerWallet {
    * Currently there is no good way to do feature-detection,
    * so we call getApiVersion and wait for 100ms
    */
-  static async isSupported() {
-    if (isNode) {
-      return true;
-    }
+  static isSupported() {
     return new Promise(resolve => {
+      if (isNode) {
+        resolve(true);
+      }
       if (window.u2f && !window.u2f.getApiVersion) {
         // u2f object is found (Firefox with extension)
         resolve(true);
@@ -126,18 +126,19 @@ class LedgerWallet {
   }
 
   /**
-     @typedef {function} failableCallback
-     @param error
-     @param result
-     */
+   * @typedef {function} failableCallback
+   * @param error
+   * @param result
+   * */
 
   /**
-   * Gets the version of installed ethereum app
+   * Gets the version of installed Ethereum app
    * Check the isSupported() before calling that function
    * otherwise it never returns
    * @param {failableCallback} callback
    * @param ttl - timeout
    */
+  // TODO: order of parameters should be reversed so it follows pattern parameter callback and can be promisfied
   async getAppConfig(callback, ttl) {
     if (!this.isU2FSupported) {
       callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
@@ -212,58 +213,67 @@ class LedgerWallet {
     cleanupCallback(null, addresses);
   }
 
+  async signTransactionAsync(txData) {
+    let eth = null;
+    try {
+      if (!this.isU2FSupported) {
+        return Promise.reject(new Error(NOT_SUPPORTED_ERROR_MSG));
+      }
+      // Encode using ethereumjs-tx
+      const tx = new EthereumTx(txData);
+      const chainId = parseInt(await this.getNetworkId(), 10);
+
+      // Set the EIP155 bits
+      tx.raw[6] = Buffer.from([chainId]); // v
+      tx.raw[7] = Buffer.from([]); // r
+      tx.raw[8] = Buffer.from([]); // s
+
+      // Encode as hex-rlp for Ledger
+      const hex = tx.serialize().toString("hex");
+
+      eth = await this.getLedgerConnection();
+
+      // Pass to _ledger for signing
+      const result = await eth.signTransaction_async(this.path, hex);
+
+      // Store signature in transaction
+      /* eslint-disable no-buffer-constructor */
+      tx.v = new Buffer(result.v, "hex");
+      tx.r = new Buffer(result.r, "hex");
+      tx.s = new Buffer(result.s, "hex");
+      /* eslint-enable no-buffer-constructor */
+
+      // EIP155: v should be chain_id * 2 + {35, 36}
+      const signedChainId = Math.floor((tx.v[0] - 35) / 2);
+      if (signedChainId !== chainId) {
+        return Promise.reject(
+          new Error(
+            "Invalid signature received. Please update your Ledger Nano S."
+          )
+        );
+      }
+
+      // Return the signed raw transaction
+      const rawTx = `0x${tx.serialize().toString("hex")}`;
+      return Promise.resolve(rawTx);
+    } catch (e) {
+      return Promise.reject(e);
+    } finally {
+      if (eth !== null) {
+        this.closeLedgerConnection(eth);
+      }
+    }
+  }
+
   /**
    * Signs txData in a format that ethereumjs-tx accepts
    * @param {object} txData - transaction to sign
    * @param {failableCallback} callback - callback
    */
-  async signTransaction(txData, callback) {
-    if (!this.isU2FSupported) {
-      callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
-      return;
-    }
-    // Encode using ethereumjs-tx
-    const tx = new EthereumTx(txData);
-    const chainId = parseInt(await this.getNetworkId(), 10);
-
-    // Set the EIP155 bits
-    tx.raw[6] = Buffer.from([chainId]); // v
-    tx.raw[7] = Buffer.from([]); // r
-    tx.raw[8] = Buffer.from([]); // s
-
-    // Encode as hex-rlp for Ledger
-    const hex = tx.serialize().toString("hex");
-
-    const eth = await this.getLedgerConnection();
-    const cleanupCallback = (error, data) => {
-      this.closeLedgerConnection(eth);
-      callback(error, data);
-    };
-    // Pass to _ledger for signing
-    eth
-      .signTransaction_async(this.path, hex)
-      .then(result => {
-        // Store signature in transaction
-        /* eslint-disable no-buffer-constructor */
-        tx.v = new Buffer(result.v, "hex");
-        tx.r = new Buffer(result.r, "hex");
-        tx.s = new Buffer(result.s, "hex");
-        /* eslint-enable no-buffer-constructor */
-
-        // EIP155: v should be chain_id * 2 + {35, 36}
-        const signedChainId = Math.floor((tx.v[0] - 35) / 2);
-        if (signedChainId !== chainId) {
-          cleanupCallback(
-            "Invalid signature received. Please update your Ledger Nano S."
-          );
-          return;
-        }
-
-        // Return the signed raw transaction
-        const rawTx = `0x${tx.serialize().toString("hex")}`;
-        cleanupCallback(undefined, rawTx);
-      })
-      .catch(error => cleanupCallback(error));
+  signTransaction(txData, callback) {
+    this.signTransactionAsync(txData)
+      .then(res => callback(null, res))
+      .catch(err => callback(err, null));
   }
 }
 
