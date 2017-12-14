@@ -5,12 +5,12 @@
   "main": "lib/index.js",
   "scripts": {
     "ganache": "./test/ganache-cli.sh",
-    "test-setup": "./node_modules/.bin/babel-node ./test/setup.js",
-    "test-node": "./node_modules/.bin/babel-node ./test/test.js",
-    "test-web": "webpack-dev-server --https --open",
+    "test-e2e-setup": "./node_modules/.bin/babel-node ./test-e2e/setup.js",
+    "test-e2e-node": "./node_modules/.bin/babel-node ./test-e2e/test.js",
+    "test-e2e-web": "webpack-dev-server --https --open",
     "lint": "eslint .",
     "lint-fix": "eslint --fix .",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha --require babel-core/register ./test/**/*.spec.js",
     "build": "babel src --out-dir lib"
   },
   "repository": {
@@ -29,12 +29,14 @@
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-env": "^1.6.1",
     "bluebird": "^3.5.1",
+    "chai": "^4.1.2",
     "eslint": "^4.12.1",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-config-prettier": "^2.9.0",
     "eslint-plugin-import": "^2.8.0",
     "eslint-plugin-prettier": "^2.3.1",
     "ganache-cli": "^6.0.3",
+    "mocha": "^4.0.1",
     "prettier": "1.9.2",
     "web3": "^0.20.0",
     "webpack-dev-server": "^2.9.5"
