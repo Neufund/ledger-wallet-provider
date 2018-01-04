@@ -40,8 +40,6 @@ class LedgerWallet {
   constructor(getNetworkId, path, askForOnDeviceConfirmation = false) {
     this.askForOnDeviceConfirmation = askForOnDeviceConfirmation;
     this.getNetworkId = getNetworkId;
-    // we store just one account that correspond to current derivation path.
-    // It's set after first getAccounts call
     this.isU2FSupported = null;
     this.connectionOpened = false;
     this.getAppConfig = this.getAppConfig.bind(this);
@@ -143,23 +141,12 @@ class LedgerWallet {
       .catch(error => cleanupCallback(error));
   }
 
-  /**
-   * Gets a list of accounts from a device - currently it's returning just
-   * first one according to derivation path
-   * @param {failableCallback} callback
-   */
-  getAccounts(callback) {
-    this.getMultipleAccounts(0, 1)
-      .then(res => callback(null, Object.values(res)))
-      .catch(err => callback(err, null));
-  }
-
   async getMultipleAccounts(indexOffset, accountsNo) {
     let eth = null;
+    if (!this.isU2FSupported) {
+      throw new Error(NOT_SUPPORTED_ERROR_MSG);
+    }
     try {
-      if (!this.isU2FSupported) {
-        return Promise.reject(new Error(NOT_SUPPORTED_ERROR_MSG));
-      }
       const pathComponents = LedgerWallet.obtainPathComponentsFromDerivationPath(
         this.path
       );
@@ -178,16 +165,14 @@ class LedgerWallet {
         );
         addresses[path] = address.address;
       }
-      return Promise.resolve(addresses);
-    } catch (e) {
-      return Promise.reject(e);
+      return addresses;
     } finally {
       if (eth !== null) {
         // This is fishy but currently ledger library always returns empty
         // resolved promise when closing connection so there is no point in
         // doing anything with returned Promise.
         // noinspection JSIgnoredPromiseFromCall
-        this.closeLedgerConnection(eth);
+        await this.closeLedgerConnection(eth);
       }
     }
   }
@@ -220,10 +205,10 @@ class LedgerWallet {
 
   async signTransactionAsync(txData) {
     let eth = null;
+    if (!this.isU2FSupported) {
+      throw new Error(NOT_SUPPORTED_ERROR_MSG);
+    }
     try {
-      if (!this.isU2FSupported) {
-        return Promise.reject(new Error(NOT_SUPPORTED_ERROR_MSG));
-      }
       // Encode using ethereumjs-tx
       const tx = new EthereumTx(txData);
       const chainId = parseInt(await this.getNetworkId(), 10);
@@ -249,27 +234,33 @@ class LedgerWallet {
       // EIP155: v should be chain_id * 2 + {35, 36}
       const signedChainId = Math.floor((tx.v[0] - 35) / 2);
       if (signedChainId !== chainId) {
-        return Promise.reject(
-          new Error(
-            "Invalid signature received. Please update your Ledger Nano S."
-          )
+        throw new Error(
+          "Invalid signature received. Please update your Ledger Nano S."
         );
       }
 
       // Return the signed raw transaction
-      const rawTx = `0x${tx.serialize().toString("hex")}`;
-      return Promise.resolve(rawTx);
-    } catch (e) {
-      return Promise.reject(e);
+      return `0x${tx.serialize().toString("hex")}`;
     } finally {
       if (eth !== null) {
         // This is fishy but currently ledger library always returns empty
         // resolved promise when closing connection so there is no point in
         // doing anything with returned Promise.
         // noinspection JSIgnoredPromiseFromCall
-        this.closeLedgerConnection(eth);
+        await this.closeLedgerConnection(eth);
       }
     }
+  }
+
+  /**
+   * Gets a list of accounts from a device - currently it's returning just
+   * first one according to derivation path
+   * @param {failableCallback} callback
+   */
+  getAccounts(callback) {
+    this.getMultipleAccounts(0, 1)
+      .then(res => callback(null, Object.values(res)))
+      .catch(err => callback(err, null));
   }
 
   /**
