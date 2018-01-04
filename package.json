@@ -4,7 +4,7 @@
   "description": "Ledger Nano S wallet provider for the Web3 ProviderEngine",
   "main": "lib/index.js",
   "scripts": {
-    "ganache": "./test/ganache-cli.sh",
+    "ganache": "./test-e2e/ganache-cli.sh",
     "test-e2e-setup": "./node_modules/.bin/babel-node ./test-e2e/setup.js",
     "test-e2e-node": "./node_modules/.bin/babel-node ./test-e2e/test.js",
     "test-e2e-web": "webpack-dev-server --https --open",

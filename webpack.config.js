@@ -1,7 +1,7 @@
 const path = require("path");
 
 module.exports = {
-  entry: "./test/test.js",
+  entry: "./test-e2e/test.js",
   output: {
     filename: "bundle.js"
   },
@@ -17,7 +17,7 @@ module.exports = {
   },
 
   devServer: {
-    contentBase: path.join(__dirname, "/test/web"),
+    contentBase: path.join(__dirname, "/test-e2e/web"),
     host: "localhost",
     port: 8080,
     proxy: {
