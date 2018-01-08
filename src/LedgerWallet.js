@@ -171,7 +171,6 @@ class LedgerWallet {
         // This is fishy but currently ledger library always returns empty
         // resolved promise when closing connection so there is no point in
         // doing anything with returned Promise.
-        // noinspection JSIgnoredPromiseFromCall
         await this.closeLedgerConnection(eth);
       }
     }
@@ -246,7 +245,6 @@ class LedgerWallet {
         // This is fishy but currently ledger library always returns empty
         // resolved promise when closing connection so there is no point in
         // doing anything with returned Promise.
-        // noinspection JSIgnoredPromiseFromCall
         await this.closeLedgerConnection(eth);
       }
     }
