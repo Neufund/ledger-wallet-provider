@@ -86,11 +86,11 @@ Copy `config.js.example` to `config.js` and edit it setting up your Nano's publi
 ### Run ganche-cli (former testrpc)
 Run `yarn ganache` command.
 ### Transfer test ether to Nano accounts that will be used in tests
-Run `yarn test-setup` command.
+Run `yarn test-e2e-setup` command.
 ### Run tests using node
 Change Nano's settings - disable browser support.  
-Run `yarn test-node` command.
+Run `yarn test-e2e-node` command.
 ### Run tests in browser
 Change Nano's settings - enable browser support.  
-Run `yarn test-web` command
+Run `yarn test-e2e-web` command
 Browser should open on url `https://localhost:8080`. Open dev console (`F12`) and check console for errors.

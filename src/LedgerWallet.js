@@ -24,24 +24,15 @@ const NOT_SUPPORTED_ERROR_MSG =
  *   * 44'/60'
  *   * 44'/61'
  *
- *  MyEtherWallet.com by default uses the range
+ *  MyEtherWallet.com by default uses the range which is not compatible with
+ *  BIP44/EIP84
  *
  *   * 44'/60'/0'/n
  *
- *  Note: no hardend derivation on the `n`
+ *  Note: no hardened derivation on the `n`
  *
- *  BIP44/EIP84 specificies:
- *
- *  * m / purpose' / coin_type' / account' / change / address_index
- *
- *  @see https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
- *  @see https://github.com/satoshilabs/slips/blob/master/slip-0044.md
  *  @see https://github.com/MetaMask/provider-engine
  *  @see https://github.com/ethereum/wiki/wiki/JavaScript-API
- *
- *  Implementations:
- *  https://github.com/MetaMask/metamask-plugin/blob/master/app/scripts/keyrings/hd.js
- *
  */
 const allowedHdPaths = ["44'/60'", "44'/61'"];
 
@@ -49,9 +40,6 @@ class LedgerWallet {
   constructor(getNetworkId, path, askForOnDeviceConfirmation = false) {
     this.askForOnDeviceConfirmation = askForOnDeviceConfirmation;
     this.getNetworkId = getNetworkId;
-    // we store just one account that correspond to current derivation path.
-    // It's set after first getAccounts call
-    this.accounts = null;
     this.isU2FSupported = null;
     this.connectionOpened = false;
     this.getAppConfig = this.getAppConfig.bind(this);
@@ -72,11 +60,11 @@ class LedgerWallet {
    * Currently there is no good way to do feature-detection,
    * so we call getApiVersion and wait for 100ms
    */
-  static async isSupported() {
-    if (isNode) {
-      return true;
-    }
+  static isSupported() {
     return new Promise(resolve => {
+      if (isNode) {
+        resolve(true);
+      }
       if (window.u2f && !window.u2f.getApiVersion) {
         // u2f object is found (Firefox with extension)
         resolve(true);
@@ -122,22 +110,22 @@ class LedgerWallet {
       );
     }
     this.path = newPath;
-    this.accounts = null;
   }
 
   /**
-     @typedef {function} failableCallback
-     @param error
-     @param result
-     */
+   * @typedef {function} failableCallback
+   * @param error
+   * @param result
+   * */
 
   /**
-   * Gets the version of installed ethereum app
+   * Gets the version of installed Ethereum app
    * Check the isSupported() before calling that function
    * otherwise it never returns
    * @param {failableCallback} callback
    * @param ttl - timeout
    */
+  // TODO: order of parameters should be reversed so it follows pattern parameter callback and can be promisfied
   async getAppConfig(callback, ttl) {
     if (!this.isU2FSupported) {
       callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
@@ -153,62 +141,124 @@ class LedgerWallet {
       .catch(error => cleanupCallback(error));
   }
 
+  async getMultipleAccounts(indexOffset, accountsNo) {
+    let eth = null;
+    if (!this.isU2FSupported) {
+      throw new Error(NOT_SUPPORTED_ERROR_MSG);
+    }
+    try {
+      const pathComponents = LedgerWallet.obtainPathComponentsFromDerivationPath(
+        this.path
+      );
+
+      const chainCode = false; // Include the chain code
+      eth = await this.getLedgerConnection();
+      const addresses = {};
+      for (let i = indexOffset; i < indexOffset + accountsNo; i += 1) {
+        const path =
+          pathComponents.basePath + (pathComponents.index + i).toString();
+        // eslint-disable-next-line no-await-in-loop
+        const address = await eth.getAddress_async(
+          path,
+          this.askForOnDeviceConfirmation,
+          chainCode
+        );
+        addresses[path] = address.address;
+      }
+      return addresses;
+    } finally {
+      if (eth !== null) {
+        // This is fishy but currently ledger library always returns empty
+        // resolved promise when closing connection so there is no point in
+        // doing anything with returned Promise.
+        await this.closeLedgerConnection(eth);
+      }
+    }
+  }
+
+  /**
+   * PathComponent contains derivation path divided into base path and index.
+   * @typedef {Object} PathComponent
+   * @property {string} basePath - Base path of derivation path.
+   * @property {number} index - index of addresses.
+   */
+
+  /**
+   * Returns derivation path components: base path (ex 44'/60'/0'/) and index
+   * used by getMultipleAccounts.
+   * @param derivationPath
+   * @returns {PathComponent} PathComponent
+   */
+  static obtainPathComponentsFromDerivationPath(derivationPath) {
+    // check if derivation path follows 44'/60'/x'/n pattern
+    const regExp = /^(44'\/6[0|1]'\/\d+'?\/)(\d+)$/;
+    const matchResult = regExp.exec(derivationPath);
+    if (matchResult === null) {
+      throw new Error(
+        "To get multiple accounts your derivation path must follow pattern 44'/60|61'/x'/n "
+      );
+    }
+
+    return { basePath: matchResult[1], index: parseInt(matchResult[2], 10) };
+  }
+
+  async signTransactionAsync(txData) {
+    let eth = null;
+    if (!this.isU2FSupported) {
+      throw new Error(NOT_SUPPORTED_ERROR_MSG);
+    }
+    try {
+      // Encode using ethereumjs-tx
+      const tx = new EthereumTx(txData);
+      const chainId = parseInt(await this.getNetworkId(), 10);
+
+      // Set the EIP155 bits
+      tx.raw[6] = Buffer.from([chainId]); // v
+      tx.raw[7] = Buffer.from([]); // r
+      tx.raw[8] = Buffer.from([]); // s
+
+      // Encode as hex-rlp for Ledger
+      const hex = tx.serialize().toString("hex");
+
+      eth = await this.getLedgerConnection();
+
+      // Pass to _ledger for signing
+      const result = await eth.signTransaction_async(this.path, hex);
+
+      // Store signature in transaction
+      tx.v = Buffer.from(result.v, "hex");
+      tx.r = Buffer.from(result.r, "hex");
+      tx.s = Buffer.from(result.s, "hex");
+
+      // EIP155: v should be chain_id * 2 + {35, 36}
+      const signedChainId = Math.floor((tx.v[0] - 35) / 2);
+      if (signedChainId !== chainId) {
+        throw new Error(
+          "Invalid signature received. Please update your Ledger Nano S."
+        );
+      }
+
+      // Return the signed raw transaction
+      return `0x${tx.serialize().toString("hex")}`;
+    } finally {
+      if (eth !== null) {
+        // This is fishy but currently ledger library always returns empty
+        // resolved promise when closing connection so there is no point in
+        // doing anything with returned Promise.
+        await this.closeLedgerConnection(eth);
+      }
+    }
+  }
+
   /**
    * Gets a list of accounts from a device - currently it's returning just
    * first one according to derivation path
    * @param {failableCallback} callback
    */
-  async getAccounts(callback) {
-    if (!this.isU2FSupported) {
-      callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
-      return;
-    }
-    if (this.accounts !== null) {
-      callback(null, this.accounts);
-      return;
-    }
-    const chainCode = false; // Include the chain code
-    const eth = await this.getLedgerConnection();
-    const cleanupCallback = (error, data) => {
-      this.closeLedgerConnection(eth);
-      callback(error, data);
-    };
-    eth
-      .getAddress_async(this.path, this.askForOnDeviceConfirmation, chainCode)
-      .then(result => {
-        this.accounts = [result.address.toLowerCase()];
-        cleanupCallback(null, this.accounts);
-      })
-      .catch(error => cleanupCallback(error));
-  }
-
-  async getMultipleAccounts(
-    derivationPath,
-    startingIndex,
-    accountsNo,
-    callback
-  ) {
-    if (!this.isU2FSupported) {
-      callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
-      return;
-    }
-    const chainCode = false; // Include the chain code
-    const eth = await this.getLedgerConnection();
-    const cleanupCallback = (error, data) => {
-      this.closeLedgerConnection(eth);
-      callback(error, data);
-    };
-    const addresses = {};
-    for (let i = startingIndex; i < startingIndex + accountsNo; i += 1) {
-      const path = `${derivationPath}${i}`;
-      const address = await eth.getAddress_async(
-        path,
-        this.askForOnDeviceConfirmation,
-        chainCode
-      );
-      addresses[path] = address.address;
-    }
-    cleanupCallback(null, addresses);
+  getAccounts(callback) {
+    this.getMultipleAccounts(0, 1)
+      .then(res => callback(null, Object.values(res)))
+      .catch(err => callback(err, null));
   }
 
   /**
@@ -216,51 +266,10 @@ class LedgerWallet {
    * @param {object} txData - transaction to sign
    * @param {failableCallback} callback - callback
    */
-  async signTransaction(txData, callback) {
-    if (!this.isU2FSupported) {
-      callback(new Error(NOT_SUPPORTED_ERROR_MSG), null);
-      return;
-    }
-    // Encode using ethereumjs-tx
-    const tx = new EthereumTx(txData);
-    const chainId = parseInt(await this.getNetworkId(), 10);
-
-    // Set the EIP155 bits
-    tx.raw[6] = Buffer.from([chainId]); // v
-    tx.raw[7] = Buffer.from([]); // r
-    tx.raw[8] = Buffer.from([]); // s
-
-    // Encode as hex-rlp for Ledger
-    const hex = tx.serialize().toString("hex");
-
-    const eth = await this.getLedgerConnection();
-    const cleanupCallback = (error, data) => {
-      this.closeLedgerConnection(eth);
-      callback(error, data);
-    };
-    // Pass to _ledger for signing
-    eth
-      .signTransaction_async(this.path, hex)
-      .then(result => {
-        // Store signature in transaction
-        tx.v = new Buffer(result.v, "hex");
-        tx.r = new Buffer(result.r, "hex");
-        tx.s = new Buffer(result.s, "hex");
-
-        // EIP155: v should be chain_id * 2 + {35, 36}
-        const signedChainId = Math.floor((tx.v[0] - 35) / 2);
-        if (signedChainId !== chainId) {
-          cleanupCallback(
-            "Invalid signature received. Please update your Ledger Nano S."
-          );
-          return;
-        }
-
-        // Return the signed raw transaction
-        const rawTx = `0x${tx.serialize().toString("hex")}`;
-        cleanupCallback(undefined, rawTx);
-      })
-      .catch(error => cleanupCallback(error));
+  signTransaction(txData, callback) {
+    this.signTransactionAsync(txData)
+      .then(res => callback(null, res))
+      .catch(err => callback(err, null));
   }
 }
 

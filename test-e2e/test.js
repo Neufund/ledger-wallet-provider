@@ -31,7 +31,6 @@ async function main() {
   web3.eth.sendTransactionAsync = promisify(web3.eth.sendTransaction);
 
   const ledger = new LedgerWallet(() => 44, config.dp0);
-  ledger.getMultipleAccountsAsync = promisify(ledger.getMultipleAccounts);
   await ledger.init();
   engine.addProvider(new HookedWalletSubprovider(ledger));
   engine.addProvider(new FetchSubprovider({ rpcUrl }));
@@ -49,7 +48,7 @@ async function main() {
     throw new Error("Account dp0Acc0 mismatch when using web3.eth.getAccounts");
   }
 
-  const ledgerDp0Accs = await ledger.getMultipleAccountsAsync(config.dp0, 0, 2);
+  const ledgerDp0Accs = await ledger.getMultipleAccounts(0, 2);
   const ledgerDp0Acc1 = ledgerDp0Accs[Object.keys(ledgerDp0Accs)[1]];
   console.log(
     `Second account from ledger: ${ledgerDp0Acc1} on derivation path: ${
@@ -82,7 +81,7 @@ async function main() {
     throw new Error("Account dp1Acc0 mismatch when using web3.eth.getAccounts");
   }
 
-  const ledgerDp1Accs = await ledger.getMultipleAccountsAsync(config.dp1, 0, 2);
+  const ledgerDp1Accs = await ledger.getMultipleAccounts(0, 2);
   const ledgerDp1Acc1 = ledgerDp1Accs[Object.keys(ledgerDp1Accs)[1]];
   console.log(
     `Second account from ledger: ${ledgerDp1Acc1} on derivation path: ${
