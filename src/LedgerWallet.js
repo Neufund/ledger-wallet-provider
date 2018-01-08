@@ -141,14 +141,14 @@ class LedgerWallet {
       .catch(error => cleanupCallback(error));
   }
 
-  async getMultipleAccounts(indexOffset, accountsNo) {
+  async getMultipleAccounts(derivationPath, indexOffset, accountsNo) {
     let eth = null;
     if (!this.isU2FSupported) {
       throw new Error(NOT_SUPPORTED_ERROR_MSG);
     }
     try {
       const pathComponents = LedgerWallet.obtainPathComponentsFromDerivationPath(
-        this.path
+        derivationPath
       );
 
       const chainCode = false; // Include the chain code
@@ -256,7 +256,7 @@ class LedgerWallet {
    * @param {failableCallback} callback
    */
   getAccounts(callback) {
-    this.getMultipleAccounts(0, 1)
+    this.getMultipleAccounts(this.path, 0, 1)
       .then(res => callback(null, Object.values(res)))
       .catch(err => callback(err, null));
   }
