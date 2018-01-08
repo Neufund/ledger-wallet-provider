@@ -46,6 +46,7 @@
     "ethereumjs-tx": "^1.3.3",
     "ledgerco": "Neufund/ledger-node-js-api",
     "promise-timeout": "^1.1.1",
+    "strip-hex-prefix": "^1.0.0",
     "u2f-api": "^0.0.9",
     "web3-provider-engine": "^13.3.3"
   }

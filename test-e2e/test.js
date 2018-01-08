@@ -29,6 +29,7 @@ async function main() {
   web3.eth.getAccountsAsync = promisify(web3.eth.getAccounts);
   web3.eth.getBalanceAsync = promisify(web3.eth.getBalance);
   web3.eth.sendTransactionAsync = promisify(web3.eth.sendTransaction);
+  web3.eth.signAsync = promisify(web3.eth.sign);
 
   const ledger = new LedgerWallet(() => 44, config.dp0);
   await ledger.init();
@@ -36,6 +37,11 @@ async function main() {
   engine.addProvider(new FetchSubprovider({ rpcUrl }));
 
   engine.start();
+
+  console.log('Signing message "hello world"');
+  const sha3 = web3.sha3("hello world");
+  const signedMsg = await web3.eth.signAsync(config.dp0Acc0, sha3);
+  console.log(signedMsg);
 
   const ledgerDp0Acc0 = (await web3.eth.getAccountsAsync())[0];
   console.log(
