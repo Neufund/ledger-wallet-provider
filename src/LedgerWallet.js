@@ -1,4 +1,4 @@
-import ledger from "ledgerco/src/index";
+import ledger from "ledgerco";
 import stripHexPrefix from "strip-hex-prefix";
 import EthereumTx from "ethereumjs-tx";
 import { timeout } from "promise-timeout";
