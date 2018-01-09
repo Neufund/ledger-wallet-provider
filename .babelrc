@@ -1,7 +1,12 @@
 {
   "presets": [
-    "es2015",
-    "es2017"
+    ["env", {
+      "include": ["transform-regenerator"],
+      "targets": {
+        "browsers": ["last 2 versions"],
+        "node": "6.12"
+      }
+    }]
   ],
-  "plugins": ["transform-class-properties", "transform-regenerator", "transform-runtime"]
+  "plugins": ["transform-runtime"]
 }

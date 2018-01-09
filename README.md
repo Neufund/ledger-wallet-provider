@@ -74,3 +74,23 @@ ledgerWalletSubProvider.isSupported()
 ```
 
 This might be helpful if you want to conditionally show Ledger Nano S support to users who could actually take advantage of it.
+
+# Development
+## Running tests
+Currently we provide only kind of end to end tests. As we are testing integration with physical device it has to be manual process.
+There are following steps:
+### Obtain dependencies
+Run `yarn` command.
+### Prepare `config.js`
+Copy `config.js.example` to `config.js` and edit it setting up your Nano's public keys. You can obtain them using [myetherwallet](https://www.myetherwallet.com/).
+### Run ganche-cli (former testrpc)
+Run `yarn ganache` command.
+### Transfer test ether to Nano accounts that will be used in tests
+Run `yarn test-e2e-setup` command.
+### Run tests using node
+Change Nano's settings - disable browser support.  
+Run `yarn test-e2e-node` command.
+### Run tests in browser
+Change Nano's settings - enable browser support.  
+Run `yarn test-e2e-web` command
+Browser should open on url `https://localhost:8080`. Open dev console (`F12`) and check console for errors.
