@@ -1,4 +1,5 @@
 import ledger from "ledgerco/src/index";
+import stripHexPrefix from "strip-hex-prefix";
 import EthereumTx from "ethereumjs-tx";
 import { timeout } from "promise-timeout";
 
@@ -46,6 +47,7 @@ class LedgerWallet {
     this.getAccounts = this.getAccounts.bind(this);
     this.getMultipleAccounts = this.getMultipleAccounts.bind(this);
     this.signTransaction = this.signTransaction.bind(this);
+    this.signMessage = this.signMessage.bind(this);
     this.getLedgerConnection = this.getLedgerConnection.bind(this);
     this.setDerivationPath = this.setDerivationPath.bind(this);
     this.setDerivationPath(path);
@@ -250,6 +252,35 @@ class LedgerWallet {
     }
   }
 
+  async signMessageAsync(msgData) {
+    if (!this.isU2FSupported) {
+      throw new Error(NOT_SUPPORTED_ERROR_MSG);
+    }
+    let eth = null;
+
+    try {
+      eth = await this.getLedgerConnection();
+
+      const result = await eth.signPersonalMessage_async(
+        this.path,
+        stripHexPrefix(msgData.data)
+      );
+      const v = parseInt(result.v, 10) - 27;
+      let vHex = v.toString(16);
+      if (vHex.length < 2) {
+        vHex = `0${v}`;
+      }
+      return `0x${result.r}${result.s}${vHex}`;
+    } finally {
+      if (eth !== null) {
+        // This is fishy but currently ledger library always returns empty
+        // resolved promise when closing connection so there is no point in
+        // doing anything with returned Promise.
+        await this.closeLedgerConnection(eth);
+      }
+    }
+  }
+
   /**
    * Gets a list of accounts from a device - currently it's returning just
    * first one according to derivation path
@@ -268,6 +299,12 @@ class LedgerWallet {
    */
   signTransaction(txData, callback) {
     this.signTransactionAsync(txData)
+      .then(res => callback(null, res))
+      .catch(err => callback(err, null));
+  }
+
+  signMessage(txData, callback) {
+    this.signMessageAsync(txData)
       .then(res => callback(null, res))
       .catch(err => callback(err, null));
   }
