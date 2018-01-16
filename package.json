@@ -1,8 +1,8 @@
 {
   "name": "ledger-wallet-provider",
-  "version": "2.0.0-beta.0",
+  "version": "2.0.0-beta.1",
   "description": "Ledger Nano S wallet provider for the Web3 ProviderEngine",
-  "main": "lib/index.js",
+  "main": "src/index.js",
   "scripts": {
     "ganache": "./test-e2e/ganache-cli.sh",
     "test-e2e-setup": "./node_modules/.bin/babel-node ./test-e2e/setup.js",
