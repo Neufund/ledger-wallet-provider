@@ -265,7 +265,8 @@ class LedgerWallet {
         this.path,
         stripHexPrefix(msgData.data)
       );
-      const v = parseInt(result.v, 10) - 27;
+      // v should be tranmitted with chainCode (27) still added to be compatible with most signers like metamask, parity and geth
+      const v = parseInt(result.v, 10);
       let vHex = v.toString(16);
       if (vHex.length < 2) {
         vHex = `0${v}`;
