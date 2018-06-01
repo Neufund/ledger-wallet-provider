@@ -193,7 +193,7 @@ class LedgerWallet {
    */
   static obtainPathComponentsFromDerivationPath(derivationPath) {
     // check if derivation path follows 44'/60'/x'/n pattern
-    const regExp = /^(44'\/6[0|1]'\/\d+'?\/)(\d+)$/;
+    const regExp = /^(44'\/6[0|1]'\/(\d+'?\/)+)(\d+)$/;
     const matchResult = regExp.exec(derivationPath);
     if (matchResult === null) {
       throw new Error(
@@ -201,7 +201,7 @@ class LedgerWallet {
       );
     }
 
-    return { basePath: matchResult[1], index: parseInt(matchResult[2], 10) };
+    return { basePath: matchResult[1], index: parseInt(matchResult[3], 10) };
   }
 
   async signTransactionAsync(txData) {
