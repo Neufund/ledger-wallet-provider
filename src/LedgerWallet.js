@@ -186,18 +186,19 @@ class LedgerWallet {
    */
 
   /**
-   * Returns derivation path components: base path (ex 44'/60'/0'/) and index
+   * Returns derivation path components: base path and index
    * used by getMultipleAccounts.
    * @param derivationPath
    * @returns {PathComponent} PathComponent
    */
   static obtainPathComponentsFromDerivationPath(derivationPath) {
-    // check if derivation path follows 44'/60'/x'/n pattern
-    const regExp = /^(44'\/6[0|1]'\/\d+'?\/)(\d+)$/;
+    // check if derivation path follows 44'/60'/x'/n (ledger native)
+    // or 44'/60'/x'/[0|1]/0 (BIP44) pattern
+    const regExp = /^(44'\/6[0|1]'\/\d+'?\/(?:[0|1]\/)?)(\d+)$/;
     const matchResult = regExp.exec(derivationPath);
     if (matchResult === null) {
       throw new Error(
-        "To get multiple accounts your derivation path must follow pattern 44'/60|61'/x'/n "
+        "Derivation path must follow pattern 44'/60|61'/x'/n or BIP 44"
       );
     }
 

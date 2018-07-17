@@ -1,3 +1,8 @@
 /src/
 /test
 /test-e2e
+.babelrc
+.eslintignore
+.eslintrc.json
+.gitignore
+webpack.config.js
