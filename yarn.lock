@@ -1873,7 +1873,7 @@ lcid@^1.0.0:
 
 ledgerco@Neufund/ledgerjs#improve_old_version:
   version "1.2.1"
-  resolved "https://codeload.github.com/Neufund/ledgerjs/tar.gz/355ff3a83432d9d388778385c321d2106e5b5bd1"
+  resolved "https://codeload.github.com/Neufund/ledgerjs/tar.gz/80410462a119c28bc848127e2f75164d46d22796"
   dependencies:
     node-hid "0.6.0"
     u2f-api "0.2.7"
