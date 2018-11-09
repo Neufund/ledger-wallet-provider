@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "babel-runtime": "^6.23.0",
-    "ledgerco": "Neufund/ledgerjs#improve_old_version",
+    "ledgerco": "Neufund/ledgerjs#dc88bf46e7d911e97c1228908d3aeecdb8576576",
     "promise-timeout": "^1.1.1",
     "u2f-api": "^0.0.9",
     "web3-provider-engine": "^11.0.0"
