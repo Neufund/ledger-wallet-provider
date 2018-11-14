@@ -33,22 +33,25 @@ var ProviderEngine = require('web3-provider-engine');
 var RpcSubprovider = require('web3-provider-engine/subproviders/rpc');
 var LedgerWalletSubproviderFactory = require('ledger-wallet-provider').default;
 
-var engine = new ProviderEngine();
-var web3 = new Web3(engine);
+main = async () => {
+    var engine = new ProviderEngine();
+    var web3 = new Web3(engine);
 
-var ledgerWalletSubProvider = async LedgerWalletSubproviderFactory();
-engine.addProvider(ledgerWalletSubProvider);
-engine.addProvider(new RpcSubprovider({rpcUrl: '/api'})); // you need RPC endpoint
-engine.start();
+    var ledgerWalletSubProvider = await LedgerWalletSubproviderFactory("44'/889'/0'/0");
+    engine.addProvider(ledgerWalletSubProvider);
+    engine.addProvider(new RpcSubprovider({rpcUrl: 'https://testnet.tomochain.com/'})); // you need RPC endpoint
+    engine.start();
 
-web3.eth.getAccounts(console.log);
+    web3.eth.getAccounts(console.log);
+}
+main();
 ```
 
 To change derivation path that will be used to derive private/public keys on your nano, modify snippet above as follows
 
 ```
 var derivation_path = "44'/60'/103'/0'";
-var ledgerWalletSubProvider = async LedgerWalletSubproviderFactory(derivation_path);
+var ledgerWalletSubProvider = await LedgerWalletSubproviderFactory(derivation_path);
 ```
 
 All paths must start with `44'/60'` or `44'/61'`.
@@ -66,7 +69,7 @@ If you would like to detect whether or not a user's browser supports U2F, you ca
 ```
 var LedgerWalletSubproviderFactory = require('ledger-wallet-provider').default;
 
-var ledgerWalletSubProvider = LedgerWalletSubproviderFactory();
+var ledgerWalletSubProvider = await LedgerWalletSubproviderFactory();
 ledgerWalletSubProvider.isSupported()
     .then(function(isSupported) {
         console.log(isSupported ? 'Yes' : 'No');
