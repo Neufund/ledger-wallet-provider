@@ -1,3 +1,6 @@
+# NOT MAINTAINED
+Please use the offical subprovider from the ledger team (https://github.com/LedgerHQ/ledgerjs)
+
 # LedgerWalletProvider
 
 The LedgerWalletProvider lets your dapp communicate directly with a user's [Ledger Nano S](https://www.ledgerwallet.com/products/ledger-nano-s) using the [zero client provider engine](https://github.com/MetaMask/provider-engine) developed by Metamask.
